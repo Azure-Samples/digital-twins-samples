@@ -1,13 +1,3 @@
----
-page_type: sample
-languages:
-- csharp
-products:
-- dotnet
-description: "Add 150 character max description"
-urlFragment: "update-this-to-unique-url-stub"
----
-
 # Official Microsoft Sample
 
 <!-- 
@@ -22,16 +12,23 @@ Give a short description for your sample here. What does it do and why is it imp
 
 ## Contents
 
-Outline the file contents of the repository. It helps users navigate the codebase, build configuration and any related assets.
+This repository contains the samples used in the Azure Digital Twins documentation at https://docs.microsoft.com/azure/digital-twins.
 
 | File/folder       | Description                                |
 |-------------------|--------------------------------------------|
-| `src`             | Sample source code.                        |
+| `Sample 1`        | Sample 1 source code.                      |
+| `Sample 2`        | Sample 2 source code.                      |
 | `.gitignore`      | Define what to ignore at commit time.      |
 | `CHANGELOG.md`    | List of changes to the sample.             |
 | `CONTRIBUTING.md` | Guidelines for contributing to the sample. |
 | `README.md`       | This README file.                          |
 | `LICENSE`         | The license for the sample.                |
+
+The following samples are available:
+
+**Sample 1**: An example dotNet sample.
+
+**Sample 2**: An example dotNet sample.
 
 ## Prerequisites
 
