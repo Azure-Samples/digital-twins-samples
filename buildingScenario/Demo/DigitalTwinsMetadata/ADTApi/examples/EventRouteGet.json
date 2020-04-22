@@ -1,0 +1,15 @@
+{
+  "parameters": {
+    "id": "eventroute-001",
+    "api-version": "2020-03-01-preview"
+  },
+  "responses": {
+    "200": {
+      "body": {
+        "id": "eventroute-001",
+        "endpointId": "endpoint-001",
+        "filter": "$eventType = 'DigitalTwinLifecycleNotification'"
+      }
+    }
+  }
+}

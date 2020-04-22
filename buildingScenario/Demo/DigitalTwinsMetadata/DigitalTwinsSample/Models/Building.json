@@ -1,0 +1,14 @@
+{
+  "@id": "urn:example:Building:1",
+  "@type": "Interface",
+  "name": "Building",
+  "contents": [
+    {
+      "@type": "Relationship",
+      "name": "contains",
+      "target": "*"
+    }
+
+  ],
+  "@context": "http://azure.com/v3/contexts/Model.json"
+}

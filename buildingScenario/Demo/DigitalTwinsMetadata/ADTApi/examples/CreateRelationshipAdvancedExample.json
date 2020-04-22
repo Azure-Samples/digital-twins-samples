@@ -1,0 +1,25 @@
+{
+  "parameters": {
+    "api-version": "2020-03-01-preview",
+    "id": "mySourceTwin",
+    "relationship": "myRelationship",
+    "edgeId": "myEdgeId",
+    "edge": {
+      "$targetId": "myTargetTwin",
+      "edgeProperty1": 1,
+      "edgeProperty2": "some value"
+    }
+  },
+  "responses": {
+    "200": {
+      "body": {
+        "$edgeId": "myEdgeId",
+        "$sourceId": "mySourceTwin",
+        "$targetId": "myTargetTwin",
+        "$relationship": "myRelationship",
+        "edgeProperty1": 1,
+        "edgeProperty2": "some value"
+      }
+    }
+  }
+}

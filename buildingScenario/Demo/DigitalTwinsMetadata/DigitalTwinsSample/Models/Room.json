@@ -1,0 +1,18 @@
+{
+  "@id": "urn:example:Room:1",
+  "@type": "Interface",
+  "name": "Room",
+  "contents": [
+    {
+      "@type": "Property",
+      "name": "Temperature",
+      "schema": "double"
+    },
+    {
+      "@type": "Property",
+      "name": "Humidity",
+      "schema": "double"
+    }
+  ],
+  "@context": "http://azure.com/v3/contexts/Model.json"
+}

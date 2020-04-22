@@ -1,0 +1,25 @@
+{
+  "@id": "urn:example:Floor:1",
+  "@type": "Interface",
+  "name": "Floor",
+  "@context": "http://azure.com/v3/contexts/Model.json",
+  "contents": [
+    {
+      "@type": "Relationship",
+      "@id": "urn:contosocom:DigitalTwins:contains:1",
+      "name": "contains",
+      "displayName": "contains",
+      "target": "*",
+      "properties": [
+        {
+          "name": "ownershipUser",
+          "schema": "string"
+        },
+        {
+          "name": "ownershipDepartment",
+          "schema": "string"
+        }
+      ]
+    }
+  ]
+}

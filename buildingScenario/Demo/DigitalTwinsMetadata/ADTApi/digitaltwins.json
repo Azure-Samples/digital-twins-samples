@@ -1,0 +1,1440 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "2020-03-01-preview",
+    "title": "Azure Digital Twins API",
+    "description": "A service for managing and querying digital twins and digital twin models."
+  },
+  "schemes": ["https"],
+  "produces": ["application/json"],
+  "consumes": ["application/json"],
+  "paths": {
+    "/models": {
+      "post": {
+        "tags": ["Models"],
+        "summary": "Add one or more models.",
+        "operationId": "Models_Add",
+        "x-ms-examples": {
+          "ModelAdd": {
+            "$ref": "./examples/ModelAdd.json"
+          }
+        },
+        "parameters": [
+          {
+            "name": "models",
+            "in": "body",
+            "description": "An array of models to add.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/NonPagedModelDataCollection"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "get": {
+        "tags": ["Models"],
+        "summary": "Retrieve model metadata and optionally model definitions.",
+        "x-ms-pageable": {
+          "nextLinkName": "nextLink"
+        },
+        "operationId": "Models_List",
+        "x-ms-examples": {
+          "ModelsGet": {
+            "$ref": "./examples/ModelsGet.json"
+          },
+          "ModelsGetWithContextAndIncludeModelDefinition": {
+            "$ref": "./examples/ModelsGetWithDependenciesAndIncludeModelDefinition.json"
+          }
+        },
+        "parameters": [
+          {
+            "name": "dependenciesFor",
+            "in": "query",
+            "description": "The set of the models which will have their dependencies retrieved. If omitted, all models are retrieved.",
+            "required": false,
+            "type": "array",
+            "collectionFormat": "multi",
+            "items": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/parameters/includeModelDefinition"
+          },
+          {
+            "$ref": "#/parameters/max-item-count"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PagedModelDataCollection"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/models/{id}": {
+      "get": {
+        "tags": ["Models"],
+        "summary": "Retrieves model metadata and optionally the model definition.",
+        "operationId": "Models_GetById",
+        "x-ms-examples": {
+          "ModelGetById": {
+            "$ref": "./examples/ModelGetById.json"
+          },
+          "ModelGetByIdWithIncludeModelDefinition": {
+            "$ref": "./examples/ModelGetByIdWithIncludeModelDefinition.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/modelId"
+          },
+          {
+            "$ref": "#/parameters/includeModelDefinition"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ModelData"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": ["Models"],
+        "summary": "Updates the metadata for a model.",
+        "operationId": "Models_Update",
+        "x-ms-examples": {
+          "ModelUpdateDecommissioned": {
+            "$ref": "./examples/ModelUpdateDecommissioned.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/modelId"
+          },
+          {
+            "name": "updateModel",
+            "description": "An update specification described by JSON-patch. Only the decommissioned property can be replaced.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/query": {
+      "post": {
+        "tags": ["Query"],
+        "operationId": "Query_QueryTwins",
+        "description": "Executes a query that allows traversing relationships and filtering by property values.",
+        "x-ms-examples": {
+          "QueryFirstPage": {
+            "$ref": "./examples/QueryFirstPage.json"
+          },
+          "QueryNextPage": {
+            "$ref": "./examples/QueryNextPage.json"
+          },
+          "QueryJoin": {
+            "$ref": "./examples/QueryJoin.json"
+          }
+        },
+        "parameters": [
+          {
+            "name": "querySpecification",
+            "in": "body",
+            "description": "The query specification to execute.",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/QuerySpecification"
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/QueryResult"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/digitaltwins/{id}": {
+      "get": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_GetById",
+        "description": "Retrieves a digital twin instance.",
+        "x-ms-examples": {
+          "GetTwin": {
+            "$ref": "./examples/GetTwin.json"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "The id of the digital twin.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "put": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_Add",
+        "description": "Adds a new digital twin instance. If a twin with this id already exists a 409 Conflict error is returned.",
+        "x-ms-examples": {
+          "PutTwinBasicExample": {
+            "$ref": "./examples/PutTwinBasicExample.json"
+          },
+          "PutTwinAdvancedExample": {
+            "$ref": "./examples/PutTwinAdvancedExample.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "name": "twin",
+            "description": "The digital twin instance being added.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "201": {
+            "description": "Success"
+          },
+          "202": {
+            "description": "Asynchronous Success",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_Delete",
+        "description": "Deletes a digital twin. All edges referencing this digital twin must already be deleted.",
+        "x-ms-examples": {
+          "DeleteTwin": {
+            "$ref": "./examples/DeleteTwin.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_Update",
+        "description": "Updates a digital twin",
+        "x-ms-examples": {
+          "PatchTwinBasicExample": {
+            "$ref": "./examples/PatchTwinBasicExample.json"
+          },
+          "PatchTwinAdvancedExample": {
+            "$ref": "./examples/PatchTwinAdvancedExample.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "name": "patchDocument",
+            "description": "An update specification described by JSON-patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "202": {
+            "description": "Asynchronous Success",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/digitaltwins/{id}/relationships/{relationship}/{edgeId}": {
+      "get": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_GetEdgeById",
+        "description": "Retrieves an edge which connects two digital twins.",
+        "x-ms-examples": {
+          "GetRelationshipById": {
+            "$ref": "./examples/GetRelationshipById.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "name": "relationship",
+            "description": "The name of the relationship which is having its edges retrieved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "edgeId",
+            "description": "The id of the edge which is being retrieved",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "put": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_AddEdge",
+        "description": "Adds an edge between two digital twins.",
+        "x-ms-examples": {
+          "CreateRelationshipBasicExample": {
+            "$ref": "./examples/CreateRelationshipBasicExample.json"
+          },
+          "CreateRelationshipAdvancedExample": {
+            "$ref": "./examples/CreateRelationshipAdvancedExample.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "name": "relationship",
+            "description": "The name of the relationship which is having its edges modified.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "edgeId",
+            "description": "The id of the edge which is being added",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "edge",
+            "in": "body",
+            "description": "The instance data for the edge being added",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_DeleteEdge",
+        "description": "Deletes an edge between two digital twins.",
+        "x-ms-examples": {
+          "DeleteRelationship": {
+            "$ref": "./examples/DeleteRelationship.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "name": "relationship",
+            "description": "The name of the relationship which is having its edges deleted.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "edgeId",
+            "description": "The id of the edge to delete.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": ["Twins"],
+        "consumes": ["application/json-patch+json", "application/json"],
+        "operationId": "DigitalTwins_UpdateEdge",
+        "description": "Updates the properties on an edge between two digital twins.",
+        "x-ms-examples": {
+          "PatchRelationshipBasicExample": {
+            "$ref": "./examples/PatchRelationshipBasicExample.json"
+          },
+          "PatchRelationshipAdvancedExample": {
+            "$ref": "./examples/PatchRelationshipAdvancedExample.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "name": "relationship",
+            "description": "The name of the relationship which is having its edges modified.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "edgeId",
+            "description": "The id of the edge which is being updated.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "patchDocument",
+            "description": "JSON-Patch description of update to edge properties.",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/digitaltwins/{id}/relationships": {
+      "get": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_ListEdges",
+        "description": "Retrieves the edges from a digital twin.",
+        "x-ms-pageable": {
+          "nextLinkName": "nextLink"
+        },
+        "x-ms-examples": {
+          "GetRelationship": {
+            "$ref": "./examples/GetRelationship.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/EdgeCollection"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/digitaltwins/{id}/relationships/{relationship}": {
+      "get": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_ListEdgesByRelationship",
+        "description": "Retrieves edges from a digital twin for the named relationship.",
+        "x-ms-pageable": {
+          "nextLinkName": "nextLink"
+        },
+        "x-ms-examples": {
+          "GetRelationshipByRelationshipName": {
+            "$ref": "./examples/GetRelationshipByRelationshipName.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "name": "relationship",
+            "description": "The name of the relationship having its edges retrieved.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/EdgeCollection"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/digitaltwins/{id}/incomingrelationships": {
+      "get": {
+        "tags": [
+          "Twins"
+        ],
+        "operationId": "DigitalTwins_ListIncomingEdges",
+        "description": "Retrieves all incoming relationships for a digital twin.",
+        "x-ms-pageable": {
+          "nextLinkName": "nextLink"
+        },
+        "x-ms-examples": {
+          "GetIncomingRelationship": {
+            "$ref": "./examples/GetIncomingRelationship.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/IncomingEdgeCollection"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/digitaltwins/{id}/telemetry": {
+      "post": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_SendTelemetry",
+        "description": "Send telemetry from a twin",
+        "x-ms-examples": {
+          "SendTelemetry": {
+            "$ref": "./examples/SendTelemetry.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "name": "telemetry",
+            "in": "body",
+            "description": "The telemetry to emit from the instance.",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "name": "ce-id",
+            "in": "header",
+            "description": "A string which uniquely identifies the message",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ce-datacontenttype",
+            "in": "header",
+            "description": "A string which describes the content type.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ce-dataschema",
+            "in": "header",
+            "description": "A string that describes the model ID (DTMI) that contains the definition for the telemetry message.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ce-specversion",
+            "in": "header",
+            "description": "A string that describes the version of the CloudEvents specification. Must be '1.0'.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "ce-subject",
+            "in": "header",
+            "description": "A dot-seperated string that identifies the DTDL component sending the telemetry.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ce-time",
+            "in": "header",
+            "description": "A string that describes the time associated with the telemetry message in RFC 3339 format.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ce-type",
+            "in": "header",
+            "description": "A string the describes the type of the message. Must be 'microsoft.iot.telemetry'.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/digitaltwins/{id}/components/{componentPath}": {
+      "get": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_GetComponent",
+        "description": "Retrieves a component from a digital twin.",
+        "x-ms-examples": {
+          "GetComponent": {
+            "$ref": "./examples/GetComponent.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "$ref": "#/parameters/componentPath"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": ["Twins"],
+        "operationId": "DigitalTwins_UpdateComponent",
+        "description": "Updates a component on a digital twin.",
+        "x-ms-examples": {
+          "PatchComponentBasicExample": {
+            "$ref": "./examples/PatchComponentBasicExample.json"
+          },
+          "PatchComponentAdvancedExample": {
+            "$ref": "./examples/PatchComponentAdvancedExample.json"
+          }
+        },
+        "consumes": ["application/json-patch+json", "application/json"],
+        "parameters": [
+          {
+            "$ref": "#/parameters/digitalTwinId"
+          },
+          {
+            "$ref": "#/parameters/componentPath"
+          },
+          {
+            "name": "patchDocument",
+            "description": "An update specification described by JSON-patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove.",
+            "in": "body",
+            "required": false,
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "202": {
+            "description": "Asynchronous Success",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "oauth2": []
+          }
+        ]
+      }
+    },
+    "/eventroutes": {
+      "get": {
+        "tags": ["EventRoutes"],
+        "description": "Retrieves event routes.",
+        "operationId": "EventRoutes_List",
+        "x-ms-examples": {
+          "EventRoutesList": {
+            "$ref": "./examples/EventRoutesList.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/max-item-count"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/EventRouteCollection"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        },
+        "x-ms-pageable": {
+          "nextLinkName": "nextLink"
+        }
+      }
+    },
+    "/eventroutes/{id}": {
+      "get": {
+        "tags": ["EventRoutes"],
+        "description": "Retrieves an event route by id.",
+        "operationId": "EventRoutes_GetById",
+        "x-ms-examples": {
+          "EventRouteGet": {
+            "$ref": "./examples/EventRouteGet.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/eventRouteId"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/EventRoute"
+            }
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["EventRoutes"],
+        "description": "Add an event route.",
+        "operationId": "EventRoutes_Add",
+        "x-ms-examples": {
+          "EventRoutePut": {
+            "$ref": "./examples/EventRoutePut.json"
+          },
+          "EventRouteWithFilter": {
+            "$ref": "./examples/EventRoutePutWithFilter.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/eventRouteId"
+          },
+          {
+            "name": "eventRoute",
+            "description": "The event route data",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/EventRoute"
+            }
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["EventRoutes"],
+        "description": "Deletes an event route.",
+        "operationId": "EventRoutes_Delete",
+        "x-ms-examples": {
+          "EventRouteDelete": {
+            "$ref": "./examples/EventRouteDelete.json"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/parameters/eventRouteId"
+          },
+          {
+            "$ref": "#/parameters/api-version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "description": "Default response.",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "EventRoute": {
+      "description": "A route which directs notification and telemetry events to an endpoint. Endpoints are a destination outside of Azure Digital Twins such as an EventHub.",
+      "type": "object",
+      "required": ["endpointId"],
+      "properties": {
+        "id": {
+          "description": "The id of the event route.",
+          "type": "string",
+          "readOnly": true
+        },
+        "endpointId": {
+          "description": "The id of the endpoint this event route is bound to.",
+          "type": "string"
+        },
+        "filter": {
+          "description": "An expression which describes the events which are routed to the endpoint.",
+          "type": "string"
+        }
+      }
+    },
+    "EventRouteCollection": {
+      "description": "A collection of EventRoute objects.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "The EventRoute objects.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EventRoute"
+          }
+        },
+        "nextLink": {
+          "description": "A URI to retrieve the next page of results.",
+          "type": "string"
+        }
+      }
+    },
+    "NonPagedModelDataCollection": {
+      "description": "A collection of ModelData objects.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ModelData"
+      }
+    },
+    "PagedModelDataCollection": {
+      "description": "A collection of ModelData objects.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "The ModelData objects.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ModelData"
+          }
+        },
+        "nextLink": {
+          "description": "A URI to retrieve the next page of objects.",
+          "type": "string"
+        }
+      }
+    },
+    "ModelData": {
+      "description": "A model definition and metadata for that model.",
+      "required": ["id"],
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "description": "The display name of the model as specified in the model definition.",
+          "type": "string"
+        },
+        "id": {
+          "description": "The id of the model as specified in the model definition.",
+          "type": "string"
+        },
+        "uploadTime": {
+          "description": "The time the model was uploaded to the service.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "serviceOrigin": {
+          "description": "The service which originated this model. This indicates if the model was uploaded to the service or was discovered via a device in IoT Hub. Models from IoT Hub may change at any time and it is recommended they are only used for creation of proxy twins.",
+          "type": "string"
+        },
+        "resolveSource": {
+          "description": "The repository from which this model was taken from. This value is always fixed for models uploaded directly to this service.",
+          "type": "string"
+        },
+        "decommissioned": {
+          "description": "Indicates if the model is decommissioned. Decommissioned models cannot be referenced by newly created digital twins.",
+          "type": "boolean",
+          "default": false
+        },
+        "model": {
+          "description": "The model definition.",
+          "type": "object"
+        }
+      }
+    },
+    "EdgeCollection": {
+      "description": "A collection of edges which relate digital twins.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "description": "The edge objects.",
+          "type": "array",
+          "items": {
+            "description": "The edge JSON document.",
+            "type": "object"
+          }
+        },
+        "nextLink": {
+          "description": "A URI to retrieve the next page of objects.",
+          "type": "string"
+        }
+      }
+    },
+    "IncomingEdgeCollection": {
+      "description": "A collection of incoming edges which relate digital twins.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/IncomingEdge"
+          }
+        },
+        "nextLink": {
+          "type": "string",
+          "description": "A URI to retrieve the next page of objects."
+        }
+      }
+    },
+    "IncomingEdge": {
+      "type": "object",
+      "description": "An incoming edge.",
+      "properties": {
+        "$edgeId": {
+          "type": "string",
+          "description": "A user-provided string representing the id of this edge, unique in the context of the source digital twin, i.e. sourceId + edgeId is unique in the context of the service."
+        },
+        "$sourceId": {
+          "type": "string",
+          "description": "The id of the source digital twin."
+        },
+        "$relationship": {
+          "type": "string",
+          "description": "The name of the relationship."
+        },
+        "$edgeLink": {
+          "type": "string",
+          "description": "Link to the edge resource itself, to be used for deletion."
+        }
+      }
+    },
+    "QuerySpecification": {
+      "description": "A query specification containing either a query statement or a continuation token from a previous query result.",
+      "type": "object",
+      "properties": {
+        "query": {
+          "description": "The query to execute. This value is ignored if a continuation token is provided.",
+          "type": "string"
+        },
+        "continuationToken": {
+          "description": "A token which is used to retrieve the next set of results from a previous query.",
+          "type": "string"
+        }
+      }
+    },
+    "QueryResult": {
+      "description": "The results of a query operation and an optional continuation token.",
+      "type": "object",
+      "properties": {
+        "items": {
+          "description": "The query results.",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "continuationToken": {
+          "description": "A token which can be used to construct a new QuerySpecification to retrieve the next set of results.",
+          "type": "string"
+        }
+      }
+    },
+    "ErrorResponse": {
+      "description": "Error response.",
+      "properties": {
+        "error": {
+          "$ref": "#/definitions/Error",
+          "description": "The error details."
+        }
+      }
+    },
+    "Error": {
+      "description": "Error definition.",
+      "properties": {
+        "code": {
+          "description": "Service specific error code which serves as the substatus for the HTTP error code.",
+          "type": "string",
+          "readOnly": true
+        },
+        "message": {
+          "description": "A human-readable representation of the error.",
+          "type": "string",
+          "readOnly": true
+        },
+        "details": {
+          "description": "Internal error details.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Error"
+          },
+          "readOnly": true
+        },
+        "innererror": {
+          "description": "An object containing more specific information than the current object about the error.",
+          "$ref": "#/definitions/InnerError"
+        }
+      }
+    },
+    "InnerError": {
+      "description": "A more specific error description than was provided by the containing error.",
+      "properties": {
+        "code": {
+          "description": "A more specific error code than was provided by the containing error.",
+          "type": "string"
+        },
+        "innererror": {
+          "description": "An object containing more specific information than the current object about the error.",
+          "$ref": "#/definitions/InnerError"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "oauth2": {
+      "flow": "implicit",
+      "authorizationUrl": "https://login.microsoftonline.com/common/oauth2/authorize?resource=0b07f429-9f4b-4714-9392-cc5e8e80c8b0",
+      "type": "oauth2"
+    }
+  },
+  "parameters": {
+    "eventRouteId": {
+      "name": "id",
+      "in": "path",
+      "required": true,
+      "type": "string",
+      "description": "The id for an event route.",
+      "x-ms-parameter-location": "method"
+    },
+    "includeModelDefinition": {
+      "name": "includeModelDefinition",
+      "description": "When true the model definition will be returned as part of the result.",
+      "in": "query",
+      "required": false,
+      "type": "boolean",
+      "default": false,
+      "x-ms-parameter-location": "method"
+    },
+    "digitalTwinId": {
+      "name": "id",
+      "in": "path",
+      "description": "The id of the digital twin.",
+      "type": "string",
+      "required": true,
+      "x-ms-parameter-location": "method"
+    },
+    "modelId": {
+      "name": "id",
+      "in": "path",
+      "description": "The id for the model.",
+      "required": true,
+      "type": "string",
+      "x-ms-parameter-location": "method"
+    },
+    "componentPath": {
+      "name": "componentPath",
+      "in": "path",
+      "description": "The dotted path for the component.",
+      "type": "string",
+      "required": true,
+      "x-ms-parameter-location": "method"
+    },
+    "api-version": {
+      "name": "api-version",
+      "in": "query",
+      "description": "The requested API version.",
+      "required": true,
+      "type": "string",
+      "enum": ["2020-03-01-preview"]
+    },
+    "max-item-count": {
+      "name": "x-ms-max-item-count",
+      "in": "header",
+      "description": "The maximum number of items to retrieve per request. The server may choose to return less than the requested max.",
+      "required": false,
+      "type": "integer",
+      "default": -1,
+      "x-ms-client-name": "MaxItemCount",
+      "x-ms-parameter-location": "method",
+      "x-ms-parameter-grouping": {
+        "postfix": "Options"
+      }
+    }
+  }
+}
