@@ -1,0 +1,31 @@
+{
+  "parameters": {
+    "api-version": "2020-03-01-preview",
+    "id": "myNewTwinId",
+    "twin": {
+      "$metadata": {
+        "$model": "urn:examplecom:interfaces:interfaceName:1"
+      }
+    }
+  },
+  "responses": {
+    "200": {
+      "body": {
+        "$id": "myNewTwinId",
+        "$metadata": {
+          "$model": "urn:examplecom:interfaces:interfaceName:1",
+          "$kind": "DigitalTwin"
+        }
+      }
+    },
+    "202": {
+      "body": {
+        "$id": "myNewTwinId",
+        "$metadata": {
+          "$model": "urn:examplecom:interfaces:interfaceName:1",
+          "$kind": "DigitalTwin"
+        }
+      }
+    }
+  }
+}

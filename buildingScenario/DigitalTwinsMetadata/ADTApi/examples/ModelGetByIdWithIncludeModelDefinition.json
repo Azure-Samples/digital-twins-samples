@@ -1,0 +1,43 @@
+{
+  "parameters": {
+    "id": "urn:azureiotcom:Sample:1",
+    "includeModelDefinition": true,
+    "api-version": "2020-03-01-preview"
+  },
+  "responses": {
+    "200": {
+      "body": {
+        "id": "urn:azureiotcom:Sample:1",
+        "uploadTime": "2020-03-01T17:32:28Z",
+        "decommissioned": false,
+        "serviceOrigin": "ADT",
+        "resolveSource": "$developer",
+        "model": {
+          "@id": "urn:azureiotcom:Sample:1",
+          "@type": "Interface",
+          "contents": [
+            {
+              "@type": "Property",
+              "name": "name",
+              "displayName": "Sample instance name",
+              "schema": "string"
+            },
+            {
+              "@type": "Property",
+              "name": "temp",
+              "displayName": "Sample instance temperature",
+              "schema": "integer"
+            },
+            {
+              "@type": "Property",
+              "name": "comfortIndex",
+              "displayName": "Sample instance comfort index",
+              "schema": "integer"
+            }
+          ],
+          "@context": "http://azureiot.com/v1/contexts/IoTModel.json"
+        }
+      }
+    }
+  }
+}

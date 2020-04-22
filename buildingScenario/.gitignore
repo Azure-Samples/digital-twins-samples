@@ -1,0 +1,62 @@
+*.swp
+*.*~
+project.lock.json
+.DS_Store
+*.pyc
+nupkg/
+
+# Visual Studio Code
+.vscode
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.Development.json
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+msbuild.log
+msbuild.err
+msbuild.wrn
+*.sln.Errors.log
+*.sfproj.Errors.log
+
+# Test results
+*.trx
+
+# Visual Studio 2015
+.vs/
+
+# Add Build folder
+!/Build/
+
+# msbuild binary logs
+*.binlog
+
+# Code coverage analysis output files
+/TestResults
+
+# Java
+.gradle/
+.project
+
+# Nugets
+packages
+
+# Node
+node_modules
+
+#Scale Test Results
+products/ScaleScenario/JMeter/product/src/reports/

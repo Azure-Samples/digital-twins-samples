@@ -1,0 +1,11 @@
+{
+  "parameters": {
+    "api-version": "2020-03-01-preview",
+    "id": "myTwinId",
+    "relationship": "myRelationship",
+    "edgeId": "myEdgeId"
+  },
+  "responses": {
+    "204": {}
+  }
+}

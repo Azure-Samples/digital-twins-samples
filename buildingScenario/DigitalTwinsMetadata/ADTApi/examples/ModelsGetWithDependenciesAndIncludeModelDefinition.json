@@ -1,0 +1,70 @@
+{
+  "parameters": {
+    "includeModelDefinition": true,
+    "dependenciesFor": ["urn:azureiotcom:SampleCapabiiltyModel:1"],
+    "x-ms-max-item-count": 20,
+    "api-version": "2020-03-01-preview"
+  },
+  "responses": {
+    "200": {
+      "body": {
+        "value": [
+          {
+            "id": "urn:azureiotcom:Sample:1",
+            "displayName": "",
+            "uploadTime": "2020-03-01T17:32:28Z",
+            "decommissioned": false,
+            "serviceOrigin": "ADT",
+            "resolveSource": "$developer",
+            "model": {
+              "@id": "urn:azureiotcom:Sample:1",
+              "@type": "Interface",
+              "contents": [
+                {
+                  "@type": "Property",
+                  "name": "name",
+                  "displayName": "Sample instance name",
+                  "schema": "string"
+                },
+                {
+                  "@type": "Property",
+                  "name": "temp",
+                  "displayName": "Sample instance temperature",
+                  "schema": "integer"
+                },
+                {
+                  "@type": "Property",
+                  "name": "comfortIndex",
+                  "displayName": "Sample instance comfort index",
+                  "schema": "integer"
+                }
+              ],
+              "@context": "http://azureiot.com/v1/contexts/IoTModel.json"
+            }
+          },
+          {
+            "id": "urn:azureiotcom:SampleCapabilityModel:1",
+            "displayName": "My Capability Model",
+            "uploadTime": "2020-03-01T17:32:28Z",
+            "decommissioned": false,
+            "serviceOrigin": "ADT",
+            "resolveSource": "$developer",
+            "model": {
+              "@id": "urn:azureiotcom:SampleCapabilityModel:1",
+              "@type": "CapabilityModel",
+              "displayName": "My Capability Model",
+              "implements": [
+                {
+                  "name": "Sample",
+                  "schema": "urn:azureiotcom:Sample:1"
+                }
+              ],
+              "@context": "http://azureiot.com/v1/contexts/IoTModel.json"
+            }
+          }
+        ],
+        "nextLink": "url-to-next-page"
+      }
+    }
+  }
+}

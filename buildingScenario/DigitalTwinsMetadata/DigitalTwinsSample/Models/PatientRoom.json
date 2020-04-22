@@ -1,0 +1,38 @@
+{
+  "@id": "urn:example:PatientRoom:1",
+  "@type": "Interface",
+  "name": "PatientRoom",
+  "contents": [
+    {
+      "@type": "Property",
+      "name": "VisitorCount",
+      "schema": "double"
+    },
+    {
+      "@type": "Property",
+      "name": "HandWashPercentage",
+      "schema": "double"
+    },
+    {
+      "@type": "Property",
+      "name": "LastTimeOfMotion",
+      "schema": "string"
+    },
+    {
+      "@type": "Property",
+      "name": "LastTimeOfSoapUse",
+      "schema": "string"
+    },
+    {
+      "@type": "Property",
+      "name": "HandWashCount",
+      "schema": "double"
+    },
+    {
+      "@type": "Relationship",
+      "name": "devices",
+      "target": "*"
+    }
+  ],
+  "@context": "http://azure.com/v3/contexts/Model.json"
+}

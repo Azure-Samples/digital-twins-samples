@@ -1,0 +1,67 @@
+{
+  "@id": "urn:contosocom:DigitalTwins:Thermostat:1",
+  "@type": "Interface",
+  "displayName": "Thermostat interface model",
+  "@context": "http://azure.com/v3/contexts/Model.json",
+  "contents": [
+    {
+      "@type": "Property",
+      "name": "DisplayName",
+      "schema": "string"
+    },
+    {
+      "@type": "Property",
+      "name": "Location",
+      "schema": "string"
+    },
+    {
+      "@type": "Property",
+      "name": "FirmwareVersion",
+      "schema": "string"
+    },
+    {
+      "@type": "Property",
+      "name": "Temperature",
+      "schema": "double"
+    },
+    {
+      "@type": "Property",
+      "name": "ComfortIndex",
+      "schema": "double"
+    },
+    {
+      "@type": "Relationship",
+      "@id": "urn:contosocom:DigitalTwins:contains:1",
+      "name": "contains",
+      "displayName": "contains",
+      "target": "*",
+      "properties": [
+        {
+          "name": "ownershipUser",
+          "schema": "string"
+        },
+        {
+          "name": "ownershipDepartment",
+          "schema": "string"
+        }
+      ]
+    },
+    {
+      "@type": "Relationship",
+      "@id": "urn:contosocom:DigitalTwins:serves:1",
+      "name": "serves",
+      "displayName": "serves",
+      "target": "*",
+      "properties": [
+        {
+          "name": "ownershipUser",
+          "schema": "string"
+        },
+        {
+          "name": "ownershipDepartment",
+          "schema": "string"
+        }
+      ]
+    }
+  ]
+}

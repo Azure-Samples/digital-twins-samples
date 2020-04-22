@@ -1,0 +1,18 @@
+{
+  "parameters": {
+    "api-version": "2020-03-01-preview",
+    "id": "myTwinId",
+    "ce-id": "myMessageId",
+    "ce-datacontenttype": "application/json",
+    "ce-dataschema": "dtmi:com:example:MyDigitalTwin:1",
+    "ce-source": "myADT.azure.net/digitaltwins/myTwinId",
+    "ce-specversion": "1.0",
+    "ce-type": "microsoft.iot.telemetry",
+    "data": {
+      "temperature": 1
+    }
+  },
+  "responses": {
+    "204": {}
+  }
+}
