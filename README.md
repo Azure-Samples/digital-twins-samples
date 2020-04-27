@@ -6,8 +6,7 @@ This repository contains the samples used in the Azure Digital Twins documentati
 
 Each sample is organized into its own folder with a README and related code:
 
-
-[Sample 1](sample1/README.md): Sample 1 is an example dotNet sample.
+[buildingScenario](buildingScenario/README.md): This is a building scenario sample written in .NET that can be used to set up and simulate a full end-to-end scenario with Azure Digital Twins.
 
 [Sample 2](sample2/README.md): Sample 2 is  example dotNet sample.
 

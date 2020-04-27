@@ -4,61 +4,34 @@ languages:
 - csharp
 products:
 - dotnet
-description: "Sample 1"
-urlFragment: "sample-1-dotnet"
+description: "A building scenario sample written in .NET for use with Azure Digital Twins"
+urlFragment: "building-scenario-dotnet"
 ---
 
-# Official Microsoft Sample
+# Azure Digital Twins
 
-<!-- 
-Guidelines on README format: https://review.docs.microsoft.com/help/onboard/admin/samples/concepts/readme-template?branch=master
+Azure Digital Twins is a developer platform for next-generation IoT solutions that lets you create, run, and manage digital representations of your business environment, securely and efficiently in the cloud. With Azure Digital Twins, creating live operational state representations is quick and cost-effective, and digital representations stay current with real-time data from IoT and other data sources.
 
-Guidance on onboarding samples to docs.microsoft.com/samples: https://review.docs.microsoft.com/help/onboard/admin/samples/process/onboarding?branch=master
+For more information about Azure Digital Twins and its key concepts, see the [Azure Digital Twins documentation](https://docs.microsoft.com/azure/digital-twins/).
 
-Taxonomies for products and languages: https://review.docs.microsoft.com/new-hope/information-architecture/metadata/taxonomies?branch=master
--->
+## Sample project contents
 
-Give a short description for your sample here. What does it do and why is it important?
+This sample contains two code projects that can be used to set up and simulate a full end-to-end scenario that makes use of Azure Digital Twins.
 
-## Contents
+The scenario components and data flow reflect this diagram:
 
-Outline the file contents of the repository. It helps users navigate the codebase, build configuration and any related assets.
+:::image type="content" source="media/building-scenario.png" alt-text="Graphic of the full building scenario. Depicts data flowing from a device into IoT Hub, through an Azure function (arrow B) to an Azure Digital Twins instance (section A), then out through Event Grid to another Azure function for processing (arrow C)":::
 
-| File/folder       | Description                                |
-|-------------------|--------------------------------------------|
-| `src`             | Sample source code.                        |
-| `.gitignore`      | Define what to ignore at commit time.      |
-| `CHANGELOG.md`    | List of changes to the sample.             |
-| `CONTRIBUTING.md` | Guidelines for contributing to the sample. |
-| `README.md`       | This README file.                          |
-| `LICENSE`         | The license for the sample.                |
+The sample repo contains:
 
-## Prerequisites
+| File/folder | Description |
+| --- | --- |
+| `DeviceSimulator` | Simulator for a that generates telemetry events. The simulated device is a thermostat that sends temperature telemetry every ~5 seconds. |
+| `DigitalTwinsMetadata` | Contains a sample client application built to interact with Azure Digital Twins, as well as two Azure Functions (*DTRoutedData* and *HubToDT*) that are used to route data between Azure Digital Twins and other external services. |
+| `SavedStrings.txt` | Text file template that can optionally be used to hold key strings as a user works through the sample. |
 
-Outline the required components and tools that a user might need to have on their machine in order to run the sample. This can be anything from frameworks, SDKs, OS versions or IDE releases.
+## Instructions
 
-## Setup
-
-Explain how to prepare the sample once the user clones or downloads the repository. The section should outline every step necessary to install dependencies and set up any settings (for example, API keys and output folders).
-
-## Running the sample
-
-Outline step-by-step instructions to execute the sample and see its output. Include steps for executing the sample from the IDE, starting specific services in the Azure portal or anything related to the overall launch of the code.
-
-## Key concepts
-
-Provide users with more context on the tools and services used in the sample. Explain some of the code that is being used and how services interact with each other.
-
-## Contributing
-
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
-
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+There are two possible sets of instructions for working with this sample. Both are part of the [Azure Digital Twins documentation](https://docs.microsoft.com/azure/digital-twins/).
+* [Quickstart: Get started with Azure Digital Twins](https://docs.microsoft.com/azure/digital-twins/quickstart)
+* [Tutorial: Build an end-to-end solution](https://docs.microsoft.com/azure/digital-twins/tutorial)
