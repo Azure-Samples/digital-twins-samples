@@ -20,7 +20,7 @@ This sample contains two code projects that can be used to set up and simulate a
 
 The scenario components and data flow reflect this diagram:
 
-:::image type="content" source="media/building-scenario.png" alt-text="Graphic of the full building scenario. Depicts data flowing from a device into IoT Hub, through an Azure function (arrow B) to an Azure Digital Twins instance (section A), then out through Event Grid to another Azure function for processing (arrow C)":::
+![Graphic of the full building scenario. Depicts data flowing from a device into IoT Hub, through an Azure function (arrow B) to an Azure Digital Twins instance (section A), then out through Event Grid to another Azure function for processing (arrow C)](media/building-scenario.png)
 
 The sample repo contains:
 
