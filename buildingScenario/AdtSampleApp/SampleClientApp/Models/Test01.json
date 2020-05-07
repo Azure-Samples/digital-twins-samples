@@ -1,0 +1,18 @@
+{
+  "@id": "urn:example:Test01:1",
+  "@type": "Interface",
+  "name": "Test01",
+  "contents": [
+    {
+      "@type": "Relationship",
+      "name": "contains",
+      "target": "*"
+    },
+    {
+      "@type": "Property",
+      "name": "data",
+      "schema": "string"
+    }
+  ],
+  "@context": "http://azure.com/v3/contexts/Model.json"
+}

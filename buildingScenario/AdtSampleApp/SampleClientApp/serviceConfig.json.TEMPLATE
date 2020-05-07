@@ -1,0 +1,5 @@
+{
+  "tenantId": "<your tenant id here>",
+  "clientId": "<your client id here>",
+  "instanceUrl": "<your instance URL here>"
+}
