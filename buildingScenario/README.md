@@ -26,12 +26,12 @@ The sample repo contains:
 
 | File/folder | Description |
 | --- | --- |
+| `AdtSampleApp` | Contains a sample client application built to interact with Azure Digital Twins, as well as an Azure Functions app with two functions (*ProcessDTRoutedData* and *ProcessHubToDTEvents*) that are used to route data between Azure Digital Twins and other external services. |
 | `DeviceSimulator` | Simulator for a that generates telemetry events. The simulated device is a thermostat that sends temperature telemetry every ~5 seconds. |
-| `DigitalTwinsMetadata` | Contains a sample client application built to interact with Azure Digital Twins, as well as two Azure Functions (*DTRoutedData* and *HubToDT*) that are used to route data between Azure Digital Twins and other external services. |
 | `SavedStrings.txt` | Text file template that can optionally be used to hold key strings as a user works through the sample. |
 
 ## Instructions
 
 There are two possible sets of instructions for working with this sample. Both are part of the [Azure Digital Twins documentation](https://docs.microsoft.com/azure/digital-twins/).
 * [Quickstart: Get started with Azure Digital Twins](https://docs.microsoft.com/azure/digital-twins/quickstart)
-* [Tutorial: Build an end-to-end solution](https://docs.microsoft.com/azure/digital-twins/tutorial)
+* [Tutorial: Build an end-to-end solution](https://docs.microsoft.com/azure/digital-twins/tutorial-end-to-end)
