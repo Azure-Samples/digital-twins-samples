@@ -40,7 +40,7 @@ namespace SampleClientApp
             {
                 filenameArray[i] = !(modelArray[i].EndsWith(".json") | modelArray[i].EndsWith(".dtdl")) ? $"{modelArray[i]}.json": modelArray[i];
             }
-            string consoleAppDir = Directory.GetCurrentDirectory() + @"\Models\";
+            string consoleAppDir = Path.Combine(Directory.GetCurrentDirectory(), "Models");
             Log.Alert($"Reading from {consoleAppDir}");
             Log.Alert(string.Format("Submitting models: {0}...", string.Join(", ", filenameArray)));
             try
