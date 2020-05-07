@@ -11,6 +11,7 @@ using Azure.Iot.DigitalTwins.Edges;
 using Azure.Iot.DigitalTwins.Models;
 using Azure;
 using System.Text;
+using System.Text.Json;
 
 namespace SampleClientApp
 {
@@ -38,9 +39,9 @@ namespace SampleClientApp
             string[] filenameArray = new string[modelArray.Length];
             for (int i = 0; i < filenameArray.Length; i++)
             {
-                filenameArray[i] = !(modelArray[i].EndsWith(".json") | modelArray[i].EndsWith(".dtdl")) ? $"{modelArray[i]}.json": modelArray[i];
+                filenameArray[i] = !(modelArray[i].EndsWith(".json") | modelArray[i].EndsWith(".dtdl")) ? $"{modelArray[i]}.json" : modelArray[i];
             }
-            string consoleAppDir = Path.Combine(Directory.GetCurrentDirectory(), "Models");
+            string consoleAppDir = Directory.GetCurrentDirectory() + @"\Models\";
             Log.Alert($"Reading from {consoleAppDir}");
             Log.Alert(string.Format("Submitting models: {0}...", string.Join(", ", filenameArray)));
             try
@@ -126,7 +127,7 @@ namespace SampleClientApp
                 await foreach (ModelData md in results)
                 {
                     Log.Out(md.Id);
-                    if (md.Model!=null)
+                    if (md.Model != null)
                         LogResponse(md.Model);
                     reslist.Add(md);
                 }
@@ -204,12 +205,13 @@ namespace SampleClientApp
         public async Task CommandQuery(string[] cmd)
         {
             string query = "SELECT * FROM DIGITALTWINS";
-            if (cmd.Length > 1) {
+            if (cmd.Length > 1)
+            {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 1; i < cmd.Length; i++)
-                    sb.Append(cmd[i]+" ");
+                    sb.Append(cmd[i] + " ");
                 query = sb.ToString();
-            }        
+            }
             Log.Alert($"Submitting query: {query}...");
             List<string> reslist = await Query(query);
             foreach (string item in reslist)
@@ -319,7 +321,7 @@ namespace SampleClientApp
         /// </summary>
         public async Task CommandGetDigitalTwin(string[] cmd)
         {
-            if (cmd.Length<2)
+            if (cmd.Length < 2)
             {
                 Log.Error("Please specify the id of the twin you wish to retrieve");
                 return;
@@ -330,7 +332,7 @@ namespace SampleClientApp
             try
             {
                 Response<string> res = await client.GetDigitalTwinAsync(twin_id);
-                if (res!=null)
+                if (res != null)
                     LogResponse(res.Value);
             }
             catch (RequestFailedException e)
@@ -343,7 +345,7 @@ namespace SampleClientApp
             }
         }
 
-        
+
 
 
 
@@ -487,11 +489,9 @@ namespace SampleClientApp
             try
             {
                 AsyncPageable<string> res = client.GetEdgesAsync(source_twin_id);
-                List<string> reslist = new List<string>();
-                await foreach(string s in res)
+                await foreach (string s in res)
                 {
                     LogResponse(s);
-                    reslist.Add(s);
                 }
             }
             catch (RequestFailedException e)
@@ -522,7 +522,7 @@ namespace SampleClientApp
             try
             {
                 Response<string> res = await client.GetEdgeAsync(source_twin_id, relationship_name, edge_id);
-                if (res!=null)
+                if (res != null)
                     LogResponse(res.Value);
             }
             catch (RequestFailedException e)
@@ -535,49 +535,153 @@ namespace SampleClientApp
             }
         }
 
-        /*
-        //THIS IS NOT TESTED OR COMPLETE
-        public async Task SubmitUpdateEdge(string id)
+        public async Task CommandGetIncomingEdges(string[] cmd)
         {
-            Log.Alert("Not implemented yet");
+            if (cmd.Length < 2)
+            {
+                Log.Error("To list incoming edges you must specify the twin id");
+                return;
+            }
+            string source_twin_id = cmd[1];
+            Log.Alert($"Submitting...");
+            try
+            {
+                AsyncPageable<IncomingEdge> res = client.GetIncomingEdgesAsync(source_twin_id);
+                await foreach (IncomingEdge ie in res)
+                {
+                    Log.Ok($"Edge: {ie.Relationship} from {ie.SourceId} | {ie.EdgeId}");
+                }
+                Log.Out("--Completed--");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
-        //THIS IS NOT TESTED OR COMPLETE
-        public async Task SubmitGetRelationship(string id)
+        /// <summary>
+        /// Create an event route with a specified id
+        /// </summary>
+        public async Task CommandCreateEventRoute(string[] cmd)
         {
-            Log.Alert("Not implemented yet");
+            if (cmd.Length < 4)
+            {
+                Log.Error("To create an event route you must specify the route id, the endpoint id and a filter");
+                return;
+            }
+
+            string route_id = cmd[1];
+            EventRoute er = new EventRoute(cmd[2]);
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 3; i < cmd.Length; i++)
+                sb.Append(cmd[i] + " ");
+            er.Filter = sb.ToString();
+            Log.Alert($"Submitting...");
+            try
+            {
+                await client.CreateEventRouteAsync(route_id, er);
+                Log.Ok("Command completed");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
-        //THIS IS NOT TESTED OR COMPLETE
-        public async Task SubmitGetRelationshipById(string id)
+        /// <summary>
+        /// Get an event route with a specified id
+        /// </summary>
+        public async Task CommandGetEventRoute(string[] cmd)
         {
-            Log.Alert("Not implemented yet");
+            if (cmd.Length < 2)
+            {
+                Log.Error("To retrieve an event route you must specify the route id");
+                return;
+            }
+
+            string route_id = cmd[1];
+            Log.Alert($"Submitting...");
+            try
+            {
+                Response<EventRoute> res = await client.GetEventRouteAsync(route_id);
+                if (res != null && res.Value!=null)
+                {
+                    Log.Out($"Route {res.Value.Id} to {res.Value.EndpointId}");
+                    Log.Out($"  Filter: {res.Value.Filter}");
+                }
+                    
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
-        //THIS IS NOT TESTED OR COMPLETE
-        public async Task SubmitGetRelationshipByRelationshipName(string id)
+        /// <summary>
+        /// Get all event routes
+        /// </summary>
+        public async Task CommandGetEventRoutes(string[] cmd)
         {
-            Log.Alert("Not implemented yet");
+            Log.Alert($"Submitting...");
+            try
+            {
+                AsyncPageable<EventRoute> res = client.GetEventRoutesAsync();
+                await foreach(EventRoute er in res)
+                {
+                    Log.Out($"Route {er.Id} to {er.EndpointId}");
+                    Log.Out($"  Filter: {er.Filter}");
+                }
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
-        //THIS IS NOT TESTED OR COMPLETE
-        public async Task SubmitGetComponent(string id)
+        /// <summary>
+        /// Delete an event route with a specified id
+        /// </summary>
+        public async Task CommandDeleteEventRoute(string[] cmd)
         {
-            Log.Alert("Not implemented yet");
-        }
+            if (cmd.Length < 2)
+            {
+                Log.Error("To delete an event route you must specify the route id");
+                return;
+            }
 
-        //THIS IS NOT TESTED OR COMPLETE
-        public async Task SubmitUpdateComponent(string id)
-        {
-            Log.Alert("Not implemented yet");
+            string route_id = cmd[1];
+            Log.Alert($"Submitting...");
+            try
+            {
+                await client.DeleteEventRouteAsync(route_id);
+                Log.Ok("Command completed");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
-
-        //THIS IS NOT TESTED OR COMPLETE
-        public async Task SubmitTelemetry(string id)
-        {
-            Log.Alert("Not implemented yet");
-        }
-        */
 
         public async Task FindAndDeleteOutgoingRelationshipsAsync(string dtId)
         {
@@ -625,18 +729,46 @@ namespace SampleClientApp
         public async Task DeleteAllTwinsAsync()
         {
             Log.Alert($"\nDeleting all twins");
-            List<string> twinIds = await Query("Select * FROM DigitalTwins").ConfigureAwait(false);
+            Log.Out($"Step 1: Find all twins", ConsoleColor.DarkYellow);
+            List<string> twinlist = new List<string>();
+            try
+            {
+                AsyncPageable<string> qresult = client.QueryAsync("SELECT * FROM DIGITALTWINS");
+                await foreach (string item in qresult)
+                {
+                    JsonDocument document = JsonDocument.Parse(item);
+                    if (document.RootElement.TryGetProperty("$dtId", out JsonElement eDtdl))
+                    {
+                        try
+                        {
+                            string twinId = eDtdl.GetString();
+                            twinlist.Add(twinId);
+                        } catch (Exception e)
+                        {
+                            Log.Error("No DTDL property in query result");
+                        }
+                    }
+                    else
+                    {
+                        Log.Error($"Error: Can't find twin id in query result:\n {item}");
+                    }
+                }       
+            } catch (Exception ex)
+            {
+                Log.Error($"Error in query execution: {ex.Message}");
+            }
+            
 
             Log.Out($"Step 2: Find and remove relationships for each twin...", ConsoleColor.DarkYellow);
-            foreach (string twinId in twinIds)
-            {
-                // Remove any relationships for the twin
-                await FindAndDeleteOutgoingRelationshipsAsync(twinId).ConfigureAwait(false);
-                await FindAndDeleteIncomingRelationshipsAsync(twinId).ConfigureAwait(false);
+            foreach (string twinId in twinlist)
+            {         
+                    // Remove any relationships for the twin
+                    await FindAndDeleteOutgoingRelationshipsAsync(twinId).ConfigureAwait(false);
+                    await FindAndDeleteIncomingRelationshipsAsync(twinId).ConfigureAwait(false);
             }
 
             Log.Out($"Step 3: Delete all twins", ConsoleColor.DarkYellow);
-            foreach (string twinId in twinIds)
+            foreach (string twinId in twinlist)
             {
                 try
                 {
@@ -648,6 +780,16 @@ namespace SampleClientApp
                     Log.Error($"*** Error {ex.Status}/{ex.ErrorCode} deleting twin {twinId} due to {ex.Message}");
                 }
             }
+        }
+
+        public async Task CommandDeleteAllTwins(string[] args)
+        {
+            await DeleteAllTwinsAsync();
+        }
+
+        public async Task CommandDeleteAllModels(string[] args)
+        {
+            Log.Error("Not implemented yet");
         }
 
         /// <summary>
@@ -716,7 +858,7 @@ namespace SampleClientApp
                 {
                     Response<string> res0 = client.GetDigitalTwin(ts.Arguments[i]);
                     if (res0 != null)
-                        LogProperty(res0.Value, ts.Arguments[i+1]);
+                        LogProperty(res0.Value, ts.Arguments[i + 1]);
                 }
                 catch (RequestFailedException e)
                 {
@@ -760,9 +902,9 @@ namespace SampleClientApp
         // Log a JSON serialized object to the command prompt
         public void LogResponse(string res, string type = "")
         {
-            if (type != "") 
+            if (type != "")
                 Log.Alert($"{type}: \n");
-            else 
+            else
                 Log.Alert("Response:");
             if (res == null)
                 Log.Out("Null response");
@@ -774,7 +916,7 @@ namespace SampleClientApp
         }
 
         //Log temperature changes in sample app
-        public void LogProperty(string res, string propName="Temperature")
+        public void LogProperty(string res, string propName = "Temperature")
         {
             object obj = JsonConvert.DeserializeObject(res);
             Dictionary<string, object> o = JObject.FromObject(obj).ToObject<Dictionary<string, object>>();
@@ -804,13 +946,14 @@ namespace SampleClientApp
             public string Help;
             public Func<string[], Task> Command;
             public CliCategory Category;
-        } 
+        }
 
         private enum CliCategory
         {
             ADTModels,
             ADTTwins,
             ADTQuery,
+            ADTRoutes,
             SampleScenario,
             SampleTools
         }
@@ -834,18 +977,25 @@ namespace SampleClientApp
                 { "DeleteEdge", new CliInfo { Command=CommandDeleteEdge, Category = CliCategory.ADTTwins, Help="<source-twin-id> <relationship-name> <edge-id>" } },
                 { "GetEdges", new CliInfo { Command=CommandGetEdges, Category = CliCategory.ADTTwins, Help="twin-id" } },
                 { "GetEdge", new CliInfo { Command=CommandGetEdge, Category = CliCategory.ADTTwins, Help="<source-twin-id> <relationship-name> <edge-id>" } },
+                { "GetIncomingEdges", new CliInfo { Command=CommandGetIncomingEdges, Category = CliCategory.ADTTwins, Help="<source-twin-id>" } },
+                { "CreateEventRoute", new CliInfo { Command=CommandCreateEventRoute, Category = CliCategory.ADTRoutes, Help="<route-id> <endpoint-id> <filter>" } },
+                { "GetEventRoute", new CliInfo { Command=CommandGetEventRoute, Category = CliCategory.ADTRoutes, Help="<route-id>" } },
+                { "GetEventRoutes", new CliInfo { Command=CommandGetEventRoutes, Category = CliCategory.ADTRoutes, Help="" } },
+                { "DeleteEventRoute", new CliInfo { Command=CommandDeleteEventRoute, Category = CliCategory.ADTRoutes, Help="<route-id>" } },
                 { "SetupBuildingScenario", new CliInfo { Command=CommandSetupBuildingScenario, Category = CliCategory.SampleScenario, Help="loads a set of models and creates a very simple example twins graph" } },
                 { "ObserveProperties", new CliInfo { Command=CommandObserveProperties, Category = CliCategory.SampleScenario, Help="<twin id> <propertyName> <twin-id> <property name>... observes the selected properties on the selected twins" } },
+                { "DeleteAllTwins", new CliInfo { Command=CommandDeleteAllTwins, Category = CliCategory.SampleTools, Help="Deletes all the twins in your instance" } },
+                { "DeleteAllModels", new CliInfo { Command=CommandDeleteAllModels, Category = CliCategory.SampleTools, Help="Deletes all models in your instance" } },
                 { "Exit", new CliInfo { Command=CommandExit, Category = CliCategory.SampleTools, Help="Exits the program" } },
             };
         }
 
-        public async Task CommandExit(string[] args=null)
+        public async Task CommandExit(string[] args = null)
         {
             Environment.Exit(0);
         }
 
-        public async Task CommandHelp(string[] args=null)
+        public async Task CommandHelp(string[] args = null)
         {
             Log.Ok("This sample app lets you construct a simple digital twins graph");
             Log.Ok("and issue some commands against the ADT service instance");
@@ -863,6 +1013,8 @@ namespace SampleClientApp
                 CliPrintCategoryCommands(CliCategory.ADTTwins);
                 Log.Alert("ADT Commands for Query:");
                 CliPrintCategoryCommands(CliCategory.ADTQuery);
+                Log.Alert("ADT Commands for Event Routes:");
+                CliPrintCategoryCommands(CliCategory.ADTRoutes);
                 Log.Alert("Others:");
                 CliPrintCategoryCommands(CliCategory.SampleTools);
             }
@@ -898,10 +1050,11 @@ namespace SampleClientApp
                                     .Single();
                         await cmd(commandArr);
                     }
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     Log.Error("Invalid command. Please type 'help' for more information.");
-                } 
+                }
             }
         }
 
