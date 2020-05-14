@@ -33,7 +33,7 @@ namespace SampleClientApp
             Log.Out($"Creating SpaceModel and Thermostat...");
             await cl.CommandCreateDigitalTwin(new string[15]
             {
-                "CreateTwin", "urn:contosocom:DigitalTwins:Space:1", "floor1",
+                "CreateTwin", "dtmi:contosocom:DigitalTwins:Space;1", "floor1",
                 "DisplayName", "string", "Floor 1",
                 "Location", "string", "Puget Sound",
                 "Temperature", "double", "0",
@@ -41,7 +41,7 @@ namespace SampleClientApp
             });
             await cl.CommandCreateDigitalTwin(new string[15]
             {
-                "CreateTwin", "urn:contosocom:DigitalTwins:Space:1", "room21",
+                "CreateTwin", "dtmi:contosocom:DigitalTwins:Space;1", "room21",
                 "DisplayName", "string", "Room 21",
                 "Location", "string", "Puget Sound",
                 "Temperature", "double", "0",
@@ -49,7 +49,7 @@ namespace SampleClientApp
             });
             await cl.CommandCreateDigitalTwin(new string[18]
             {
-                "CreateTwin", "urn:contosocom:DigitalTwins:Thermostat:1", "thermostat67",
+                "CreateTwin", "dtmi:contosocom:DigitalTwins:Thermostat;1", "thermostat67",
                 "DisplayName", "string", "Thermostat 67",
                 "Location", "string", "Puget Sound",
                 "FirmwareVersion", "string", "1.3.9",
