@@ -1,7 +1,7 @@
 {
   "@id": "dtmi:example:Floor;1",
   "@type": "Interface",
-  "name": "Floor",
+  "displayName": "Floor",
   "@context": "dtmi:dtdl:context;2",
   "contents": [
     {
