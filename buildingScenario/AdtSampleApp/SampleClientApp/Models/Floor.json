@@ -1,15 +1,14 @@
 {
-  "@id": "urn:example:Floor:1",
+  "@id": "dtmi:example:Floor;1",
   "@type": "Interface",
   "name": "Floor",
-  "@context": "http://azure.com/v3/contexts/Model.json",
+  "@context": "dtmi:dtdl:context;2",
   "contents": [
     {
       "@type": "Relationship",
-      "@id": "urn:contosocom:DigitalTwins:contains:1",
+      "@id": "dtmi:contosocom:DigitalTwins:contains;1",
       "name": "contains",
       "displayName": "contains",
-      "target": "*",
       "properties": [
         {
           "name": "ownershipUser",
