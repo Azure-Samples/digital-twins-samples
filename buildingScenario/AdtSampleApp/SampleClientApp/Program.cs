@@ -40,9 +40,9 @@ namespace SampleClientApp
 
         static async Task Main()
         {
-            int width = Math.Min(Console.LargestWindowWidth, 130);
-            int height = Math.Min(Console.LargestWindowHeight, 40);
-            Console.SetWindowSize(width, height);
+            /*int width = Math.Min(Console.LargestWindowWidth, 130);
+            //int height = Math.Min(Console.LargestWindowHeight, 40);
+            //Console.SetWindowSize(width, height);
             try
             {
                 // Read configuration data from the 
@@ -59,7 +59,7 @@ namespace SampleClientApp
                 Log.Alert($"and edit to reflect your service connection settings");
                 Environment.Exit(0);
             }
-
+            */
             Log.Ok("Authorizing...");
             try
             {
