@@ -6,7 +6,6 @@
   "contents": [
     {
       "@type": "Relationship",
-      "@id": "dtmi:contosocom:DigitalTwins:contains;1",
       "name": "contains",
       "displayName": "contains",
       "properties": [

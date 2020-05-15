@@ -31,7 +31,6 @@
     },
     {
       "@type": "Relationship",
-      "@id": "dtmi:contosocom:DigitalTwins:contains;1",
       "name": "contains",
       "displayName": "contains",
       "properties": [
@@ -49,7 +48,6 @@
     },
     {
       "@type": "Relationship",
-      "@id": "dtmi:contosocom:DigitalTwins:serves;1",
       "name": "serves",
       "displayName": "serves",
       "properties": [
