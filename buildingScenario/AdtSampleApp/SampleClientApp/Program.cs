@@ -28,9 +28,9 @@ namespace SampleClientApp
         // Properties to establish connection
         // Please copy the file serviceConfig.json.TEMPLATE to serviceConfig.json 
         // and set up these values in the config file
-        private static string clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
-        private static string tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
-        private static string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
+        private static string clientId;
+        private static string tenantId;
+        private static string adtInstanceUrl;
 
         const string adtAppId = "https://digitaltwins.azure.net";
         
@@ -40,9 +40,6 @@ namespace SampleClientApp
 
         static async Task Main()
         {
-            /*int width = Math.Min(Console.LargestWindowWidth, 130);
-            //int height = Math.Min(Console.LargestWindowHeight, 40);
-            //Console.SetWindowSize(width, height);
             try
             {
                 // Read configuration data from the 
@@ -59,7 +56,7 @@ namespace SampleClientApp
                 Log.Alert($"and edit to reflect your service connection settings");
                 Environment.Exit(0);
             }
-            */
+            
             Log.Ok("Authorizing...");
             try
             {
