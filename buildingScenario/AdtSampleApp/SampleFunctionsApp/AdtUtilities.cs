@@ -1,6 +1,6 @@
 ﻿using Azure;
-using Azure.Iot.DigitalTwins;
-using Azure.Iot.DigitalTwins.Models;
+using Azure.DigitalTwins.Core;
+using Azure.DigitalTwins.Core.Models;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,11 +18,11 @@ namespace SampleFunctionsApp
             // Find parent using incoming relationships
             try
             {
-                AsyncPageable<IncomingEdge> rels = client.GetIncomingEdgesAsync(child);
+                AsyncPageable<IncomingRelationship> rels = client.GetIncomingRelationshipsAsync(child);
 
-                await foreach (IncomingEdge ie in rels)
+                await foreach (IncomingRelationship ie in rels)
                 {
-                    if (ie.Relationship == relname)
+                    if (ie.RelationshipName == relname)
                         return (ie.SourceId);
                 }
             }

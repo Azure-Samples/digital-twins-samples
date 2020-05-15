@@ -18,8 +18,7 @@ using System.Linq;
 using Azure;
 using Azure.Identity;
 
-using Azure.Iot.DigitalTwins;
-using Azure.Iot.DigitalTwins.Edges;
+using Azure.DigitalTwins.Core;
 
 namespace SampleFunctionsApp
 {

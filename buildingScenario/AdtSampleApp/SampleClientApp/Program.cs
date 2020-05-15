@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 
-using Azure.Iot.DigitalTwins;
-using Azure.Iot.DigitalTwins.Serialization;
-using Azure.Iot.DigitalTwins.Models;
+using Azure.DigitalTwins.Core;
+using Azure.DigitalTwins.Core.Serialization;
+using Azure.DigitalTwins.Core.Models;
 
 
 //

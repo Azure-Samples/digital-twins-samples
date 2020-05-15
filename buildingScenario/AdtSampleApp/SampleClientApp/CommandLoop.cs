@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 /*using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;*/
 
-using Azure.Iot.DigitalTwins;
-using Azure.Iot.DigitalTwins.Serialization;
-using Azure.Iot.DigitalTwins.Models;
+using Azure.DigitalTwins.Core;
+using Azure.DigitalTwins.Core.Serialization;
+using Azure.DigitalTwins.Core.Models;
 using Azure;
 using System.Text;
 using System.Text.Json;
@@ -432,7 +432,7 @@ namespace SampleClientApp
             Log.Out($"Submitting...");
             try
             {
-                await client.CreateEdgeAsync(source_twin_id, relationship_name, edge_id, JsonSerializer.Serialize(body));
+                await client.CreateRelationshipAsync(source_twin_id, edge_id, relationship_name);
                 Log.Ok($"Edge {edge_id} of type {relationship_name} created successfully from {source_twin_id} to {target_twin_id}!");
             }
             catch (RequestFailedException e)
@@ -461,7 +461,7 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                await client.DeleteEdgeAsync(source_twin_id, relationship_name, edge_id);
+                await client.DeleteRelationshipAsync(source_twin_id, edge_id);
                 Log.Ok($"Edge '{edge_id}' for twin '{source_twin_id}' of type '{relationship_name}' deleted successfully!");
             }
             catch (RequestFailedException e)
@@ -488,7 +488,7 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                AsyncPageable<string> res = client.GetEdgesAsync(source_twin_id);
+                AsyncPageable<string> res = client.GetRelationshipsAsync(source_twin_id);
                 await foreach (string s in res)
                 {
                     LogResponse(s);
@@ -521,7 +521,7 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                Response<string> res = await client.GetEdgeAsync(source_twin_id, relationship_name, edge_id);
+                Response<string> res = await client.GetRelationshipAsync(source_twin_id, edge_id);
                 if (res != null)
                     LogResponse(res.Value);
             }
@@ -546,10 +546,10 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                AsyncPageable<IncomingEdge> res = client.GetIncomingEdgesAsync(source_twin_id);
-                await foreach (IncomingEdge ie in res)
+                AsyncPageable<IncomingRelationship> res = client.GetIncomingRelationshipsAsync(source_twin_id);
+                await foreach (IncomingRelationship ie in res)
                 {
-                    Log.Ok($"Edge: {ie.Relationship} from {ie.SourceId} | {ie.EdgeId}");
+                    Log.Ok($"Edge: {ie.RelationshipName} from {ie.SourceId} | {ie.RelationshipId}");
                 }
                 Log.Out("--Completed--");
             }
@@ -690,13 +690,13 @@ namespace SampleClientApp
             try
             {
                 // GetEdgesAsync will throw if an error occurs
-                AsyncPageable<string> edgesJson = client.GetEdgesAsync(dtId);
+                AsyncPageable<string> edgesJson = client.GetRelationshipsAsync(dtId);
 
                 await foreach (string edgeJson in edgesJson)
                 {
-                    var edge = System.Text.Json.JsonSerializer.Deserialize<BasicEdge>(edgeJson);
-                    await client.DeleteEdgeAsync(dtId, edge.Relationship, edge.EdgeId).ConfigureAwait(false);
-                    Log.Ok($"Deleted relationship {edge.EdgeId} from {dtId}");
+                    var edge = System.Text.Json.JsonSerializer.Deserialize<BasicRelationship>(edgeJson);
+                    await client.DeleteRelationshipAsync(dtId, edge.Id).ConfigureAwait(false);
+                    Log.Ok($"Deleted relationship {edge.Id} from {dtId}");
                 }
             }
             catch (RequestFailedException ex)
@@ -712,12 +712,12 @@ namespace SampleClientApp
             try
             {
                 // GetEdgesAsync will throw if an error occurs
-                AsyncPageable<IncomingEdge> incomingEdges = client.GetIncomingEdgesAsync(dtId);
+                AsyncPageable<IncomingRelationship> incomingEdges = client.GetIncomingRelationshipsAsync(dtId);
 
-                await foreach (IncomingEdge incomingEdge in incomingEdges)
+                await foreach (IncomingRelationship incomingEdge in incomingEdges)
                 {
-                    await client.DeleteEdgeAsync(incomingEdge.SourceId, incomingEdge.Relationship, incomingEdge.EdgeId).ConfigureAwait(false);
-                    Log.Ok($"Deleted incoming relationship {incomingEdge.EdgeId} from {dtId}");
+                    await client.DeleteRelationshipAsync(incomingEdge.SourceId, incomingEdge.RelationshipId).ConfigureAwait(false);
+                    Log.Ok($"Deleted incoming relationship {incomingEdge.RelationshipId} from {dtId}");
                 }
             }
             catch (RequestFailedException ex)
