@@ -58,13 +58,13 @@ namespace SampleClientApp
             });
 
             Log.Out($"Creating edges between the Floor, Room and Thermostat");
-            await cl.CommandCreateEdge(new string[11]
+            await cl.CommandCreateRelationship(new string[11]
             {
                 "CreateEdge", "floor1", "contains", "room21", "floor_to_room_edge",
                 "ownershipUser", "string", "Contoso",
                 "ownershipDepartment", "string", "Comms Division"
             });
-            await cl.CommandCreateEdge(new string[11]
+            await cl.CommandCreateRelationship(new string[11]
             {
                 "CreateEdge", "room21", "contains", "thermostat67", "room_to_therm_edge",
                 "ownershipUser", "string", "Contoso",

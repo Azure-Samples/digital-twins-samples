@@ -187,7 +187,8 @@ namespace SampleClientApp
             {
                 //Response<ModelData> res = await client.DeleteModelAsync(model_id);
                 //LogResponse(res.Value.Model);
-                Log.Error("*** Not implemented yet");
+                await client.DeleteModelAsync(model_id);
+                Log.Ok("Model deleted successfully");
             }
             catch (RequestFailedException e)
             {
@@ -393,19 +394,19 @@ namespace SampleClientApp
         }
 
         /// <summary>
-        /// Create an edge between a source twin and target twin with the specified relationship name
+        /// Create a Relationship between a source twin and target twin with the specified relationship name
         /// </summary>
-        public async Task CommandCreateEdge(string[] cmd)
+        public async Task CommandCreateRelationship(string[] cmd)
         {
             if (cmd.Length < 5)
             {
-                Log.Error("To create an edge you must specify at least source twin, target twin, relationship name and relationship id");
+                Log.Error("To create an Relationship you must specify at least source twin, target twin, relationship name and relationship id");
                 return;
             }
             string source_twin_id = cmd[1];
             string relationship_name = cmd[2];
             string target_twin_id = cmd[3];
-            string edge_id = cmd[4];
+            string relationship_id = cmd[4];
 
             string[] args = null;
             if (cmd.Length > 5)
@@ -433,8 +434,8 @@ namespace SampleClientApp
             Log.Out($"Submitting...");
             try
             {
-                await client.CreateRelationshipAsync(source_twin_id, edge_id, JsonSerializer.Serialize(body));
-                Log.Ok($"Edge {edge_id} of type {relationship_name} created successfully from {source_twin_id} to {target_twin_id}!");
+                await client.CreateRelationshipAsync(source_twin_id, relationship_id, JsonSerializer.Serialize(body));
+                Log.Ok($"Relationship {relationship_id} of type {relationship_name} created successfully from {source_twin_id} to {target_twin_id}!");
             }
             catch (RequestFailedException e)
             {
@@ -447,23 +448,23 @@ namespace SampleClientApp
         }
 
         /// <summary>
-        /// Delete an edge from a source twin with the specified relationship name and edge id
+        /// Delete a relationship from a source twin with the specified relationship name and relationship id
         /// </summary>
-        public async Task CommandDeleteEdge(string[] cmd)
+        public async Task CommandDeleteRelationship(string[] cmd)
         {
             if (cmd.Length < 4)
             {
-                Log.Error("To delete an edge you must specify the twin id, relationship name and relationship id");
+                Log.Error("To delete a relationship you must specify the twin id, relationship name and relationship id");
                 return;
             }
             string source_twin_id = cmd[1];
             string relationship_name = cmd[2];
-            string edge_id = cmd[3];
+            string relationship_id = cmd[3];
             Log.Alert($"Submitting...");
             try
             {
-                await client.DeleteRelationshipAsync(source_twin_id, edge_id);
-                Log.Ok($"Edge '{edge_id}' for twin '{source_twin_id}' of type '{relationship_name}' deleted successfully!");
+                await client.DeleteRelationshipAsync(source_twin_id, relationship_id);
+                Log.Ok($"Relationship '{relationship_id}' for twin '{source_twin_id}' of type '{relationship_name}' deleted successfully!");
             }
             catch (RequestFailedException e)
             {
@@ -476,13 +477,13 @@ namespace SampleClientApp
         }
 
         /// <summary>
-        /// Get an edge with the specified source twin
+        /// Get a relationship with the specified source twin
         /// </summary>
-        public async Task CommandGetEdges(string[] cmd)
+        public async Task CommandGetRelationships(string[] cmd)
         {
             if (cmd.Length < 2)
             {
-                Log.Error("To list edges you must specify the twin id");
+                Log.Error("To list relationships you must specify the twin id");
                 return;
             }
             string source_twin_id = cmd[1];
@@ -506,23 +507,23 @@ namespace SampleClientApp
         }
 
         /// <summary>
-        /// Get an edge with a specified source twin, relationship name and edge id
+        /// Get a relationship with a specified source twin, relationship name and relationship id
         /// </summary>
-        public async Task CommandGetEdge(string[] cmd)
+        public async Task CommandGetRelationship(string[] cmd)
         {
             if (cmd.Length < 4)
             {
-                Log.Error("To retrieve an edge you must specify the twin id, relationship name and edge id");
+                Log.Error("To retrieve a relationship you must specify the twin id, relationship name and relationship id");
                 return;
             }
 
             string source_twin_id = cmd[1];
             string relationship_name = cmd[2];
-            string edge_id = cmd[3];
+            string relationship_id = cmd[3];
             Log.Alert($"Submitting...");
             try
             {
-                Response<string> res = await client.GetRelationshipAsync(source_twin_id, edge_id);
+                Response<string> res = await client.GetRelationshipAsync(source_twin_id, relationship_id);
                 if (res != null)
                     LogResponse(res.Value);
             }
@@ -536,11 +537,11 @@ namespace SampleClientApp
             }
         }
 
-        public async Task CommandGetIncomingEdges(string[] cmd)
+        public async Task CommandGetIncomingRelationships(string[] cmd)
         {
             if (cmd.Length < 2)
             {
-                Log.Error("To list incoming edges you must specify the twin id");
+                Log.Error("To list incoming relationships you must specify the twin id");
                 return;
             }
             string source_twin_id = cmd[1];
@@ -550,7 +551,7 @@ namespace SampleClientApp
                 AsyncPageable<IncomingRelationship> res = client.GetIncomingRelationshipsAsync(source_twin_id);
                 await foreach (IncomingRelationship ie in res)
                 {
-                    Log.Ok($"Edge: {ie.RelationshipName} from {ie.SourceId} | {ie.RelationshipId}");
+                    Log.Ok($"Relationship: {ie.RelationshipName} from {ie.SourceId} | {ie.RelationshipId}");
                 }
                 Log.Out("--Completed--");
             }
@@ -690,14 +691,14 @@ namespace SampleClientApp
 
             try
             {
-                // GetEdgesAsync will throw if an error occurs
-                AsyncPageable<string> edgesJson = client.GetRelationshipsAsync(dtId);
+                // GetRelationshipsAsync will throw if an error occurs
+                AsyncPageable<string> relsJson = client.GetRelationshipsAsync(dtId);
 
-                await foreach (string edgeJson in edgesJson)
+                await foreach (string relJson in relsJson)
                 {
-                    var edge = System.Text.Json.JsonSerializer.Deserialize<BasicRelationship>(edgeJson);
-                    await client.DeleteRelationshipAsync(dtId, edge.Id).ConfigureAwait(false);
-                    Log.Ok($"Deleted relationship {edge.Id} from {dtId}");
+                    var rel = System.Text.Json.JsonSerializer.Deserialize<BasicRelationship>(relJson);
+                    await client.DeleteRelationshipAsync(dtId, rel.Id).ConfigureAwait(false);
+                    Log.Ok($"Deleted relationship {rel.Id} from {dtId}");
                 }
             }
             catch (RequestFailedException ex)
@@ -712,13 +713,13 @@ namespace SampleClientApp
 
             try
             {
-                // GetEdgesAsync will throw if an error occurs
-                AsyncPageable<IncomingRelationship> incomingEdges = client.GetIncomingRelationshipsAsync(dtId);
+                // GetRelationshipssAsync will throw if an error occurs
+                AsyncPageable<IncomingRelationship> incomingRels = client.GetIncomingRelationshipsAsync(dtId);
 
-                await foreach (IncomingRelationship incomingEdge in incomingEdges)
+                await foreach (IncomingRelationship incomingRel in incomingRels)
                 {
-                    await client.DeleteRelationshipAsync(incomingEdge.SourceId, incomingEdge.RelationshipId).ConfigureAwait(false);
-                    Log.Ok($"Deleted incoming relationship {incomingEdge.RelationshipId} from {dtId}");
+                    await client.DeleteRelationshipAsync(incomingRel.SourceId, incomingRel.RelationshipId).ConfigureAwait(false);
+                    Log.Ok($"Deleted incoming relationship {incomingRel.RelationshipId} from {dtId}");
                 }
             }
             catch (RequestFailedException ex)
@@ -794,17 +795,8 @@ namespace SampleClientApp
         }
 
         /// <summary>
-        /// Get an edge with a specified source twin, relationship name and edge id
+        /// Create some twins to represent a building
         /// </summary>
-        /// <param name='source_twin_id'>
-        /// Id of the twin where the edge is pointing FROM
-        /// </param>
-        /// <param name='relationship_name'>
-        /// Name of the relationship. It must exist as a "relationship" in the source twin dtdl model
-        /// </param>
-        /// <param name='edge_id'>
-        /// Id of the edge
-        /// </param>
         public async Task CommandSetupBuildingScenario(string[] cmd)
         {
             Log.Out($"Initializing Building Scenario...");
@@ -973,11 +965,11 @@ namespace SampleClientApp
                 { "UpdateDigitalTwin", new CliInfo { Command=CommandUpdateDigitalTwin, Category = CliCategory.ADTTwins, Help="<twin-id> <operation-0> <path-0> <value-schema-0> <value-0> ..." } },
                 { "GetDigitalTwin", new CliInfo { Command=CommandGetDigitalTwin, Category = CliCategory.ADTTwins, Help="<twin-id>" } },
                 { "DeleteDigitalTwin", new CliInfo { Command=CommandDeleteDigitalTwin, Category = CliCategory.ADTTwins, Help="<twin-id>" } },
-                { "CreateEdge", new CliInfo { Command=CommandCreateEdge, Category = CliCategory.ADTTwins, Help="<source-twin-id> <relationship-name> <target-twin-id> <edge-id> <property-name-0> <prop-type-0> <prop-value-0> ..." } },
-                { "DeleteEdge", new CliInfo { Command=CommandDeleteEdge, Category = CliCategory.ADTTwins, Help="<source-twin-id> <relationship-name> <edge-id>" } },
-                { "GetEdges", new CliInfo { Command=CommandGetEdges, Category = CliCategory.ADTTwins, Help="twin-id" } },
-                { "GetEdge", new CliInfo { Command=CommandGetEdge, Category = CliCategory.ADTTwins, Help="<source-twin-id> <relationship-name> <edge-id>" } },
-                { "GetIncomingEdges", new CliInfo { Command=CommandGetIncomingEdges, Category = CliCategory.ADTTwins, Help="<source-twin-id>" } },
+                { "CreateRelationship", new CliInfo { Command=CommandCreateRelationship, Category = CliCategory.ADTTwins, Help="<source-twin-id> <relationship-name> <target-twin-id> <relationship-id> <property-name-0> <prop-type-0> <prop-value-0> ..." } },
+                { "DeleteRelationship", new CliInfo { Command=CommandDeleteRelationship, Category = CliCategory.ADTTwins, Help="<source-twin-id> <relationship-name> <relationship-id>" } },
+                { "GetRelationships", new CliInfo { Command=CommandGetRelationships, Category = CliCategory.ADTTwins, Help="twin-id" } },
+                { "GetRelationship", new CliInfo { Command=CommandGetRelationship, Category = CliCategory.ADTTwins, Help="<source-twin-id> <relationship-name> <relationship-id>" } },
+                { "GetIncomingRelationships", new CliInfo { Command=CommandGetIncomingRelationships, Category = CliCategory.ADTTwins, Help="<source-twin-id>" } },
                 { "CreateEventRoute", new CliInfo { Command=CommandCreateEventRoute, Category = CliCategory.ADTRoutes, Help="<route-id> <endpoint-id> <filter>" } },
                 { "GetEventRoute", new CliInfo { Command=CommandGetEventRoute, Category = CliCategory.ADTRoutes, Help="<route-id>" } },
                 { "GetEventRoutes", new CliInfo { Command=CommandGetEventRoutes, Category = CliCategory.ADTRoutes, Help="" } },

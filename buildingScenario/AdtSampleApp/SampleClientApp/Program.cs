@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration.Json;
 using Azure.DigitalTwins.Core;
 using Azure.DigitalTwins.Core.Serialization;
 using Azure.DigitalTwins.Core.Models;
+using System.Runtime.InteropServices;
 
 
 //
@@ -40,6 +41,12 @@ namespace SampleClientApp
 
         static async Task Main()
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                int width = Math.Min(Console.LargestWindowWidth, 150);
+                int height = Math.Min(Console.LargestWindowHeight, 40);
+                Console.SetWindowSize(width, height);
+            }
             try
             {
                 // Read configuration data from the 
