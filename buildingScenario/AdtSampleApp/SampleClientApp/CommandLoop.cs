@@ -41,7 +41,7 @@ namespace SampleClientApp
             {
                 filenameArray[i] = !(modelArray[i].EndsWith(".json") | modelArray[i].EndsWith(".dtdl")) ? $"{modelArray[i]}.json" : modelArray[i];
             }
-            string consoleAppDir = Directory.GetCurrentDirectory() + @"\Models\";
+            string consoleAppDir = Path.Combine(Directory.GetCurrentDirectory(), @"Models");
             Log.Alert($"Reading from {consoleAppDir}");
             Log.Alert(string.Format("Submitting models: {0}...", string.Join(", ", filenameArray)));
             try
@@ -421,6 +421,7 @@ namespace SampleClientApp
             Dictionary<string, object> body = new Dictionary<string, object>()
             {
                 { "$targetId", target_twin_id},
+                { "$relationshipName", relationship_name}
             };
             if (args != null)
             {
@@ -432,7 +433,7 @@ namespace SampleClientApp
             Log.Out($"Submitting...");
             try
             {
-                await client.CreateRelationshipAsync(source_twin_id, edge_id, relationship_name);
+                await client.CreateRelationshipAsync(source_twin_id, edge_id, JsonSerializer.Serialize(body));
                 Log.Ok($"Edge {edge_id} of type {relationship_name} created successfully from {source_twin_id} to {target_twin_id}!");
             }
             catch (RequestFailedException e)
