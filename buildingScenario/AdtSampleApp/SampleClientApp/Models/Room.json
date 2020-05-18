@@ -1,7 +1,7 @@
 {
-  "@id": "urn:example:Room:1",
+  "@id": "dtmi:example:Room;1",
   "@type": "Interface",
-  "name": "Room",
+  "displayName": "Room",
   "contents": [
     {
       "@type": "Property",
@@ -14,5 +14,5 @@
       "schema": "double"
     }
   ],
-  "@context": "http://azure.com/v3/contexts/Model.json"
+  "@context": "dtmi:dtdl:context;2"
 }

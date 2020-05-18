@@ -183,7 +183,6 @@ publish/
 PublishScripts/
 
 # NuGet Packages
-*.nupkg
 # NuGet Symbol Packages
 *.snupkg
 # The packages folder can be ignored because of Package Restore
@@ -349,3 +348,6 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 /buildingScenario/AdtSampleApp/SampleClientApp/serviceConfig.json
+.DS_Store
+.vscode/
+buildingScenario/AdtSampleApp/SampleClientApp/serviceConfig.json
