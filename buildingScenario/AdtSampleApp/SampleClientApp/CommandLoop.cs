@@ -1040,7 +1040,7 @@ namespace SampleClientApp
                 {
                     Log.Alert("\nPlease enter a command or 'help'. Commands are not case sensitive");
                     string command = Console.ReadLine().Trim();
-                    string[] commandArr = command.Split(null);
+                    string[] commandArr = SplitArgs(command);
                     string verb = commandArr[0].ToLower();
                     if (verb != null && verb != "")
                     {
@@ -1056,6 +1056,31 @@ namespace SampleClientApp
                     Log.Error("Invalid command. Please type 'help' for more information.");
                 }
             }
+        }
+
+        private string[] SplitArgs(string arg)
+        {
+            int quotecount = arg.Count(x => x == '"');
+            if (quotecount % 2 != 0)
+            {
+                Log.Alert("Your command contains an uneven number of quotes. Was that intended?");
+            }
+            string[] segments = arg.Split('"', StringSplitOptions.RemoveEmptyEntries);
+            List<string> elements = new List<string>();
+            for (int i = 0; i < segments.Length; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    string[] parts = segments[i].Split(new char[] { }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (string ps in parts)
+                        elements.Add(ps.Trim());
+                }
+                else
+                {
+                    elements.Add(segments[i].Trim());
+                }
+            }
+            return elements.ToArray();
         }
 
     }
