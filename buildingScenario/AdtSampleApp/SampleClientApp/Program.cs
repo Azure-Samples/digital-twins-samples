@@ -10,7 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 
 using Azure.Iot.DigitalTwins;
-using Azure.Iot.DigitalTwins.Edges;
+using Azure.Iot.DigitalTwins.Serialization;
 using Azure.Iot.DigitalTwins.Models;
 
 

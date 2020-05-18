@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+/*using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;*/
 
 using Azure.Iot.DigitalTwins;
-using Azure.Iot.DigitalTwins.Edges;
+using Azure.Iot.DigitalTwins.Serialization;
 using Azure.Iot.DigitalTwins.Models;
 using Azure;
 using System.Text;
@@ -275,7 +275,7 @@ namespace SampleClientApp
 
             try
             {
-                await client.CreateDigitalTwinAsync(twin_id, JsonConvert.SerializeObject(twinData));
+                await client.CreateDigitalTwinAsync(twin_id, JsonSerializer.Serialize(twinData));
                 Log.Ok($"Twin '{twin_id}' created successfully!");
             }
             catch (RequestFailedException e)
@@ -379,7 +379,7 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                await client.UpdateDigitalTwinAsync(twin_id, JsonConvert.SerializeObject(twinData));
+                await client.UpdateDigitalTwinAsync(twin_id, JsonSerializer.Serialize(twinData));
                 Log.Ok($"Twin '{twin_id}' updated successfully!");
             }
             catch (RequestFailedException e)
@@ -432,7 +432,7 @@ namespace SampleClientApp
             Log.Out($"Submitting...");
             try
             {
-                await client.CreateEdgeAsync(source_twin_id, relationship_name, edge_id, JsonConvert.SerializeObject(body));
+                await client.CreateEdgeAsync(source_twin_id, relationship_name, edge_id, JsonSerializer.Serialize(body));
                 Log.Ok($"Edge {edge_id} of type {relationship_name} created successfully from {source_twin_id} to {target_twin_id}!");
             }
             catch (RequestFailedException e)
@@ -918,13 +918,12 @@ namespace SampleClientApp
         //Log temperature changes in sample app
         public void LogProperty(string res, string propName = "Temperature")
         {
-            object obj = JsonConvert.DeserializeObject(res);
-            Dictionary<string, object> o = JObject.FromObject(obj).ToObject<Dictionary<string, object>>();
+            Dictionary<string, object> obj = JsonSerializer.Deserialize<Dictionary<string, object>>(res);
             object dtid;
-            if (o.TryGetValue("$dtId", out dtid) == false)
+            if (obj.TryGetValue("$dtId", out dtid) == false)
                 dtid = "<$dtId not found>";
             object value;
-            if (o.TryGetValue(propName, out value) == false)
+            if (obj.TryGetValue(propName, out value) == false)
                 value = "<property not found>";
             Console.WriteLine($"$dtId: {dtid}, {propName}: {value}");
         }
