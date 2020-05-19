@@ -30,17 +30,17 @@ namespace SampleFunctionsApp
     public static class ProcessDTRoutedData
     {
         const string adtAppId = "https://digitaltwins.azure.net";
-        private static string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
-        static DigitalTwinsClient client = null;
+        private static string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL"); 
 
         [FunctionName("ProcessDTRoutedData")]
         public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
         {
-            log.LogInformation("start execution");
             // After this is deployed, you need to turn the Identity Status "On", 
             // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role to this function identity
             // in order for this function to be authorize on ADT APIs.
 
+            DigitalTwinsClient client = null;
+            log.LogInformation("start execution");
             // Authenticate on ADT APIs
             try
             {

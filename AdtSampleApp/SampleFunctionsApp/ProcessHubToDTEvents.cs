@@ -32,7 +32,6 @@ namespace SampleFunctionsApp
     {
         const string adtAppId = "https://digitaltwins.azure.net";
         private static string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
-        static DigitalTwinsClient client = null;
 
         [FunctionName("ProcessHubToDTEvents")]
         public async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
@@ -41,6 +40,7 @@ namespace SampleFunctionsApp
             // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role to this function identity
             // in order for this function to be authorized on ADT APIs.
 
+            DigitalTwinsClient client = null;
             //log.LogInformation(eventGridEvent.Data.ToString());
             // Authenticate on ADT APIs
             try
