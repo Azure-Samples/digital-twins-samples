@@ -352,3 +352,5 @@ MigrationBackup/
 .vscode/
 buildingScenario/AdtSampleApp/SampleClientApp/serviceConfig.json
 .DS_Store
+*/serviceConfig.json
+AdtSampleApp/SampleClientApp/serviceConfig.json
