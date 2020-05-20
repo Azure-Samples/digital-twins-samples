@@ -13,6 +13,7 @@ using Azure.DigitalTwins.Core;
 using Azure.DigitalTwins.Core.Serialization;
 using Azure.DigitalTwins.Core.Models;
 using System.Runtime.InteropServices;
+using Azure;
 
 
 //
@@ -74,13 +75,19 @@ namespace SampleClientApp
                 try
                 {
                     client.GetDigitalTwin("---");
-                } catch (Exception e)
+                }
+                catch (RequestFailedException rex)
                 {
 
                 }
+                catch (Exception e)
+                {
+                    Log.Error($"Authentication or client creation error: {e.Message}");
+                    Environment.Exit(0);
+                }
             } catch(Exception e)
             {
-                Console.WriteLine($"Authentication or client creation error: {e.Message}");
+                Log.Error($"Authentication or client creation error: {e.Message}");
                 Environment.Exit(0);
             }
             
