@@ -242,7 +242,6 @@ namespace SampleClientApp
                     while (interfaces.Count() > 0)
                     {
                         Log.Out($"Model deletion pass {pass++}");
-                        // In version 3.9.0 of the parser this will change to Dictionary
                         Dictionary<Dtmi, DTInterfaceInfo> referenced = new Dictionary<Dtmi, DTInterfaceInfo>();
                         foreach (DTInterfaceInfo i in interfaces)
                         {
