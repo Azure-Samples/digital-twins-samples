@@ -12,6 +12,7 @@ using Azure.DigitalTwins.Core.Models;
 using Azure;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Azure.DigitalTwins.Parser;
 
 namespace SampleClientApp
 {
@@ -189,6 +190,113 @@ namespace SampleClientApp
                 //LogResponse(res.Value.Model);
                 await client.DeleteModelAsync(model_id);
                 Log.Ok("Model deleted successfully");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Delete all models
+        /// </summary>
+        public async Task CommandDeleteAllModels(string[] cmd)
+        {
+            Log.Alert($"Submitting...");
+            try
+            {
+                List<string> reslist = new List<string>();
+                AsyncPageable<ModelData> results = client.GetModelsAsync(null, true);
+                await foreach (ModelData md in results)
+                {
+                    Log.Out(md.Id);
+                    if (md.Model != null)
+                    {
+                        Log.Out(md.Id);
+                        reslist.Add(md.Model);
+                    }
+                }
+                Log.Out("");
+                Log.Alert($"Found {reslist.Count} model(s)");
+
+                ModelParser parser = new ModelParser();
+                try
+                {
+                    IReadOnlyDictionary<Dtmi, DTEntityInfo> om = await parser.ParseAsync(reslist);
+                    Log.Ok("Models parsed successfully. Deleting models...");
+
+                    List<DTInterfaceInfo> interfaces = new List<DTInterfaceInfo>();
+                    IEnumerable<DTInterfaceInfo> ifenum = from entity in om.Values
+                                                          where entity.EntityKind == DTEntityKind.Interface
+                                                          select entity as DTInterfaceInfo;
+                    interfaces.AddRange(ifenum);
+                    int pass = 1;
+                    // DeleteModels can only delete models that are not in the inheritance chain of other models
+                    // or used as components by other models. Therefore, we use the model parser to parse the DTDL
+                    // and then find the "leaf" models, and delete these.
+                    // We repeat this process until no models are left.
+                    while (interfaces.Count() > 0)
+                    {
+                        Log.Out($"Model deletion pass {pass++}");
+                        Dictionary<Dtmi, DTInterfaceInfo> referenced = new Dictionary<Dtmi, DTInterfaceInfo>();
+                        foreach (DTInterfaceInfo i in interfaces)
+                        {
+                            foreach (DTInterfaceInfo ext in i.Extends)
+                            {
+                                referenced.TryAdd(ext.Id, ext);
+                            }
+                            IEnumerable<DTComponentInfo> components = from content in i.Contents.Values
+                                                                      where content.EntityKind == DTEntityKind.Component
+                                                                      select content as DTComponentInfo;
+                            foreach (DTComponentInfo comp in components)
+                            {
+                                referenced.TryAdd(comp.Schema.Id, comp.Schema);
+                            }
+                        }
+                        List<DTInterfaceInfo> toDelete = new List<DTInterfaceInfo>();
+                        foreach (DTInterfaceInfo iface in interfaces)
+                        {
+                            if (referenced.TryGetValue(iface.Id, out DTInterfaceInfo result) == false)
+                            {
+                                Log.Alert($"Can delete {iface.Id}");
+                                toDelete.Add(iface);
+                            }
+                        }
+                        foreach (DTInterfaceInfo del in toDelete)
+                        {
+                            interfaces.Remove(del);
+                            try
+                            {
+                                await client.DeleteModelAsync(del.Id.ToString());
+                                Log.Ok($"Model {del.Id} deleted successfully");
+                            }
+                            catch (RequestFailedException e)
+                            {
+                                Log.Error($"Error deleting model {e.Status}: {e.Message}");
+                            }
+                        }
+                    }
+                }
+                catch (ParsingException pe)
+                {
+                    Log.Error($"*** Error parsing models");
+                    int derrcount = 1;
+                    foreach (ParsingError err in pe.Errors)
+                    {
+                        Log.Error($"Error {derrcount}:");
+                        Log.Error($"{err.Message}");
+                        Log.Error($"Primary ID: {err.PrimaryID}");
+                        Log.Error($"Secondary ID: {err.SecondaryID}");
+                        Log.Error($"Property: {err.Property}\n");
+                        derrcount++;
+                    }
+                    return;
+                }
+
             }
             catch (RequestFailedException e)
             {
@@ -789,11 +897,6 @@ namespace SampleClientApp
             await DeleteAllTwinsAsync();
         }
 
-        public async Task CommandDeleteAllModels(string[] args)
-        {
-            Log.Error("Not implemented yet");
-        }
-
         /// <summary>
         /// Create some twins to represent a building
         /// </summary>
@@ -802,6 +905,138 @@ namespace SampleClientApp
             Log.Out($"Initializing Building Scenario...");
             BuildingScenario b = new BuildingScenario(this);
             await b.InitBuilding();
+        }
+
+        public async Task CommandLoadModels(string[] cmd)
+        {
+            if (cmd.Length < 2)
+            {
+                Log.Error("Please provide a directory path to load models from");
+                return;
+            }
+            string directory = cmd[1];
+
+            string extension = "json";
+            if (cmd.Length > 2)
+            {
+                extension = cmd[2];
+            }
+            bool recursive = true;
+            if (cmd.Length > 3)
+            {
+                if (cmd[3] == "nosub")
+                    recursive = false;
+                else
+                    Log.Error("If you pass more than two parameters, the third parameter must be 'nosub' to skip recursive load");
+            }
+
+            DirectoryInfo dinfo = null;
+            try
+            {
+                dinfo = new DirectoryInfo(directory);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Error accessing the target directory '{directory}': \n{e.Message}");
+                return;
+            }
+            Log.Alert($"Loading *.{extension} files in folder '{dinfo.FullName}'.\nRecursive is set to {recursive}\n");
+            if (dinfo.Exists == false)
+            {
+                Log.Error($"Specified directory '{directory}' does not exist: Exiting...");
+                return;
+            }
+            else
+            {
+                SearchOption searchOpt = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                var files = dinfo.EnumerateFiles($"*.{extension}", searchOpt);
+                if (files.Count() == 0)
+                {
+                    Log.Alert("No matching files found.");
+                    return;
+                }
+                Dictionary<FileInfo, string> modelDict = new Dictionary<FileInfo, string>();
+                int count = 0;
+                string lastFile = "<none>";
+                try
+                {
+                    foreach (FileInfo fi in files)
+                    {
+                        StreamReader r = new StreamReader(fi.FullName);
+                        string dtdl = r.ReadToEnd(); r.Close();
+                        modelDict.Add(fi, dtdl);
+                        lastFile = fi.FullName;
+                        count++;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error($"Could not read files. \nLast file read: {lastFile}\nError: \n{e.Message}");
+                    return;
+                }
+                Log.Ok($"Read {count} files from specified directory");
+                int errJson = 0;
+                foreach (FileInfo fi in modelDict.Keys)
+                {
+                    modelDict.TryGetValue(fi, out string dtdl);
+                    try
+                    {
+                        JsonDocument.Parse(dtdl);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error($"Invalid json found in file {fi.FullName}.\nJson parser error \n{e.Message}");
+                        errJson++;
+                    }
+                }
+                if (errJson > 0)
+                {
+                    Log.Error($"\nFound  {errJson} Json parsing errors");
+                    return;
+                }
+                Log.Ok($"Validated JSON for all files - now validating DTDL");
+                List<string> modelList = modelDict.Values.ToList<string>();
+                ModelParser parser = new ModelParser();
+                try
+                {
+                    IReadOnlyDictionary<Dtmi, DTEntityInfo> om = parser.ParseAsync(modelList).GetAwaiter().GetResult();
+                    Log.Out("");
+                    Log.Ok($"**********************************************");
+                    Log.Ok($"** Validated all files - Your DTDL is valid **");
+                    Log.Ok($"**********************************************");
+                    Log.Out($"Found a total of {om.Keys.Count()} entities in the DTDL");
+
+                    try
+                    {
+                        await client.CreateModelsAsync(modelList);
+                        Log.Ok($"**********************************************");
+                        Log.Ok($"** Models uploaded successfully **************");
+                        Log.Ok($"**********************************************");
+                    }
+                    catch (RequestFailedException ex)
+                    {
+                        Log.Error($"*** Error uploading models: {ex.Status}/{ex.ErrorCode}");
+                        return;
+                    }
+                }
+                catch (ParsingException pe)
+                {
+                    Log.Error($"*** Error parsing models");
+                    int derrcount = 1;
+                    foreach (ParsingError err in pe.Errors)
+                    {
+                        Log.Error($"Error {derrcount}:");
+                        Log.Error($"{err.Message}");
+                        Log.Error($"Primary ID: {err.PrimaryID}");
+                        Log.Error($"Secondary ID: {err.SecondaryID}");
+                        Log.Error($"Property: {err.Property}\n");
+                        derrcount++;
+                    }
+                    return;
+                }
+
+            }
+
         }
 
         /// <summary>
@@ -978,6 +1213,7 @@ namespace SampleClientApp
                 { "ObserveProperties", new CliInfo { Command=CommandObserveProperties, Category = CliCategory.SampleScenario, Help="<twin id> <propertyName> <twin-id> <property name>... observes the selected properties on the selected twins" } },
                 { "DeleteAllTwins", new CliInfo { Command=CommandDeleteAllTwins, Category = CliCategory.SampleTools, Help="Deletes all the twins in your instance" } },
                 { "DeleteAllModels", new CliInfo { Command=CommandDeleteAllModels, Category = CliCategory.SampleTools, Help="Deletes all models in your instance" } },
+                { "LoadModelsFromDirectory", new CliInfo { Command=CommandLoadModels, Category = CliCategory.SampleTools, Help="<directory-path> <extension(json by default)> [nosub]" } },
                 { "Exit", new CliInfo { Command=CommandExit, Category = CliCategory.SampleTools, Help="Exits the program" } },
             };
         }
