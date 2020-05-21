@@ -19,6 +19,7 @@ using Azure;
 using Azure.Identity;
 
 using Azure.DigitalTwins.Core;
+using System.Net.Http;
 
 namespace SampleFunctionsApp
 {
@@ -32,6 +33,7 @@ namespace SampleFunctionsApp
     {
         const string adtAppId = "https://digitaltwins.azure.net";
         private static string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
+        private static HttpClient httpClient = new HttpClient();
 
         [FunctionName("ProcessHubToDTEvents")]
         public async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
@@ -46,7 +48,7 @@ namespace SampleFunctionsApp
             try
             {
                 ManagedIdentityCredential cred = new ManagedIdentityCredential(adtAppId);
-                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred);
+                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, /*something goes here*/ httpClient);
                 log.LogInformation($"ADT service client connection created.");
             }
             catch (Exception e)
