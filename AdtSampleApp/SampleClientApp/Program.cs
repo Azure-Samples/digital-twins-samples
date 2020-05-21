@@ -65,7 +65,7 @@ namespace SampleClientApp
                 Environment.Exit(0);
             }
             
-            Log.Ok("Authorizing...");
+            Log.Ok("Authenticating...");
             try
             {
                 var credential = new InteractiveBrowserCredential(tenantId, clientId);
