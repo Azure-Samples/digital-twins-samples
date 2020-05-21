@@ -30,7 +30,7 @@ namespace DeviceSimulator
             {
                 e.Cancel = true;
                 tokenSource.Cancel();
-                Console.WriteLine("Existing ...");
+                Console.WriteLine("Exiting ...");
             };
             Console.WriteLine("Press CTRL+C to exit");
 
