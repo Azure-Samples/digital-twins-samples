@@ -18,7 +18,8 @@ using Azure.Identity;
 
 using Azure.DigitalTwins.Core;
 using Azure.DigitalTwins.Core.Models;
-
+using System.Net.Http;
+using Azure.Core.Pipeline;
 
 namespace SampleFunctionsApp
 {
@@ -30,7 +31,8 @@ namespace SampleFunctionsApp
     public static class ProcessDTRoutedData
     {
         const string adtAppId = "https://digitaltwins.azure.net";
-        private static string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL"); 
+        private static string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
+        private static HttpClient httpClient = new HttpClient();
 
         [FunctionName("ProcessDTRoutedData")]
         public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
@@ -45,12 +47,12 @@ namespace SampleFunctionsApp
             try
             {
                 ManagedIdentityCredential cred = new ManagedIdentityCredential(adtAppId);
-                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred);
+                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation($"ADT service client connection created.");
             }
             catch (Exception e)
             {
-                log.LogError($"ADT service client connection failed.");
+                log.LogError($"ADT service client connection failed. " + e.ToString());
                 return;
             }
 
