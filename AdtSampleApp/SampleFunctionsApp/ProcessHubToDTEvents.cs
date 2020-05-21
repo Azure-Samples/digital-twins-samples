@@ -20,6 +20,7 @@ using Azure.Identity;
 
 using Azure.DigitalTwins.Core;
 using System.Net.Http;
+using Azure.Core.Pipeline;
 
 namespace SampleFunctionsApp
 {
@@ -47,13 +48,14 @@ namespace SampleFunctionsApp
             // Authenticate on ADT APIs
             try
             {
+                
                 ManagedIdentityCredential cred = new ManagedIdentityCredential(adtAppId);
-                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, /*something goes here*/ httpClient);
+                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation($"ADT service client connection created.");
             }
             catch (Exception e)
             {
-                log.LogError($"ADT service client connection failed.");
+                log.LogError($"ADT service client connection failed. " + e.ToString());
                 return;
             }
 
