@@ -1,7 +1,6 @@
 ﻿using Azure;
 using Azure.DigitalTwins.Core;
 using Azure.DigitalTwins.Core.Models;
-using Azure.DigitalTwins.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -85,9 +84,14 @@ namespace SampleFunctionsApp
             try
             {
                 // Update twin property
-                UpdateOperationsUtility uou = new UpdateOperationsUtility();
-                uou.AppendAddOp(propertyPath, value);
-                await client.UpdateDigitalTwinAsync(twinId, uou.Serialize());
+                List<Dictionary<string, object>> ops = new List<Dictionary<string, object>>();
+                ops.Add(new Dictionary<string, object>()
+                {
+                    { "op", "replace"},
+                    { "path", propertyPath},
+                    { "value", value}
+                });
+                await client.UpdateDigitalTwinAsync(twinId, JsonConvert.SerializeObject(ops));
             }
             catch (RequestFailedException exc)
             {
