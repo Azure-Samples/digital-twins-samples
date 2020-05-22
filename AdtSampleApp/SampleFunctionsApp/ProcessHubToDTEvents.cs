@@ -98,9 +98,7 @@ namespace SampleFunctionsApp
                         await AdtUtilities.UpdateTwinProperty(client, deviceId, "/Temperature", temperature, log);
 
                         // Find parent using incoming relationships
-                        // Update parent twin
-                        //string parentId = await FindParent(deviceId, log);
-                        string parentId = await AdtUtilities.FindParentByQuery(client, deviceId, log);
+                        string parentId = await AdtUtilities.FindParent(client, deviceId, "contains", log);
                         if (parentId != null)
                         {
                             await AdtUtilities.UpdateTwinProperty(client, parentId, "/Temperature", temperature, log);
