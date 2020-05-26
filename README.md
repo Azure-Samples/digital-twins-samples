@@ -4,9 +4,9 @@ Azure Digital Twins is a developer platform for next-generation IoT solutions th
 
 For more information about Azure Digital Twins and its key concepts, see the [Azure Digital Twins documentation](https://docs.microsoft.com/azure/digital-twins/).
 
-## Contents
+## Purpose
 
-[buildingScenario](buildingScenario/README.md): This is a building scenario sample written in .NET that can be used to set up and simulate a full end-to-end scenario with Azure Digital Twins.
+This is a building scenario sample written in .NET that can be used to set up and simulate a full end-to-end scenario with Azure Digital Twins.
 
 ## Prerequisites
 
@@ -34,8 +34,8 @@ The sample repo contains:
 ## Instructions
 
 There are two possible sets of instructions for working with this sample. Both are part of the [Azure Digital Twins documentation](https://docs.microsoft.com/azure/digital-twins/).
-* [Quickstart: Get started with Azure Digital Twins](https://docs.microsoft.com/azure/digital-twins/quickstart)
-* [Tutorial: Build an end-to-end solution](https://docs.microsoft.com/azure/digital-twins/tutorial-end-to-end)
+* [Tutorial: Explore the basics with a sample client app](https://docs.microsoft.com/azure/digital-twins/tutorial-command-line-app)
+* [Tutorial: Connect an end-to-end solution](https://docs.microsoft.com/azure/digital-twins/tutorial-end-to-end)
 
 ## Contributing
 
