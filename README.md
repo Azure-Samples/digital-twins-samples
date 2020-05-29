@@ -1,4 +1,14 @@
-# Samples for Azure Digital Twins documentation
+---
+page_type: sample
+languages:
+- csharp
+products:
+- azure-digital-twins
+name: Azure Digital Twins building sample
+description: This is a building scenario sample written in .NET that can be used to set up and simulate a full end-to-end scenario with Azure Digital Twins.
+---
+
+# Building sample for Azure Digital Twins documentation
 
 Azure Digital Twins is a developer platform for next-generation IoT solutions that lets you create, run, and manage digital representations of your business environment, securely and efficiently in the cloud. With Azure Digital Twins, creating live operational state representations is quick and cost-effective, and digital representations stay current with real-time data from IoT and other data sources.
 
