@@ -725,7 +725,7 @@ namespace SampleClientApp
                 Response<EventRoute> res = await client.GetEventRouteAsync(route_id);
                 if (res != null && res.Value!=null)
                 {
-                    Log.Out($"Route {res.Value.Id} to {res.Value.EndpointId}");
+                    Log.Out($"Route {res.Value.Id} to {res.Value.EndpointName}");
                     Log.Out($"  Filter: {res.Value.Filter}");
                 }
                     
@@ -751,7 +751,7 @@ namespace SampleClientApp
                 AsyncPageable<EventRoute> res = client.GetEventRoutesAsync();
                 await foreach(EventRoute er in res)
                 {
-                    Log.Out($"Route {er.Id} to {er.EndpointId}");
+                    Log.Out($"Route {er.Id} to {er.EndpointName}");
                     Log.Out($"  Filter: {er.Filter}");
                 }
             }
