@@ -1114,6 +1114,8 @@ namespace SampleClientApp
                     return bool.Parse(val);
                 case "double":
                     return double.Parse(val);
+                case "float":
+                    return float.Parse(val);
                 case "integer":
                 case "int":
                     return Int32.Parse(val);
