@@ -13,6 +13,8 @@ using Azure;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Azure.DigitalTwins.Parser;
+using CsvHelper;
+using System.Globalization;
 
 namespace SampleClientApp
 {
@@ -907,6 +909,43 @@ namespace SampleClientApp
             await b.InitBuilding();
         }
 
+        public async Task CommandLoadTwinsFile(string[] cmd)
+        {
+            if (cmd.Length < 2)
+            {
+                Log.Error("Please provide a file path to create twins from");
+                return;
+            }
+            string filepath = cmd[1];
+
+            using (var reader = new StreamReader(filepath))
+            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+            {
+                csv.Configuration.HasHeaderRecord = false;
+                csv.Configuration.Delimiter = " ";
+                var records = csv.GetRecords<CreateCommand>();
+
+                foreach (var command in records)
+                {
+                    string[] commandParams = command.validParams();
+                    try
+                    {
+                        if (command.isForCreateDigitalTwin())
+                            await this.CommandCreateDigitalTwin(commandParams);
+                        else if (command.isForCreateRelationship())
+                            await this.CommandCreateRelationship(commandParams);
+                        else
+                            Log.Error("Ignoring line with command " + command.Command());
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error("Error on processing command: " + string.Join(' ', command.Params));
+                        throw e;
+                    }
+                }
+            }
+        }
+
         public async Task CommandLoadModels(string[] cmd)
         {
             if (cmd.Length < 2)
@@ -1114,6 +1153,8 @@ namespace SampleClientApp
                     return bool.Parse(val);
                 case "double":
                     return double.Parse(val);
+                case "float":
+                    return float.Parse(val);
                 case "integer":
                 case "int":
                     return Int32.Parse(val);
@@ -1214,6 +1255,7 @@ namespace SampleClientApp
                 { "DeleteAllTwins", new CliInfo { Command=CommandDeleteAllTwins, Category = CliCategory.SampleTools, Help="Deletes all the twins in your instance" } },
                 { "DeleteAllModels", new CliInfo { Command=CommandDeleteAllModels, Category = CliCategory.SampleTools, Help="Deletes all models in your instance" } },
                 { "LoadModelsFromDirectory", new CliInfo { Command=CommandLoadModels, Category = CliCategory.SampleTools, Help="<directory-path> <extension(json by default)> [nosub]" } },
+                { "LoadTwinsFromFile", new CliInfo { Command=CommandLoadTwinsFile, Category = CliCategory.SampleTools, Help="<file-path> ...loads Digital Twins and Relationship from a file. Same syntax as CreateDigitalTwin and CreateRelationship syntax" } },
                 { "Exit", new CliInfo { Command=CommandExit, Category = CliCategory.SampleTools, Help="Exits the program" } },
             };
         }
@@ -1311,5 +1353,38 @@ namespace SampleClientApp
             return elements.ToArray();
         }
 
+    }
+
+    class CreateCommand
+    {
+        public string[] Params { get; set; }
+
+        public string Command()
+        {
+            return this.Params != null && this.Params.Length > 0 ? this.Params[0] : "Unknown";
+        }
+
+        public bool isForCreateDigitalTwin()
+        {
+            return "CreateDigitalTwin".Equals(this.Command());
+        }
+
+        public bool isForCreateRelationship()
+        {
+            return "CreateRelationship".Equals(this.Command());
+        }
+
+        public string[] validParams()
+        {
+            List<string> result = new List<string>();
+
+            foreach(string param in this.Params)
+            {
+                if (param != null && param.Length > 0)
+                    result.Add(param);
+            }
+
+            return result.ToArray();
+        }
     }
 }
