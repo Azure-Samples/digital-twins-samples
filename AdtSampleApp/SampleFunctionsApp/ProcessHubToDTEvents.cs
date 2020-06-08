@@ -43,25 +43,17 @@ namespace SampleFunctionsApp
             // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role to this function identity
             // in order for this function to be authorized on ADT APIs.
 
+            log.LogInformation(eventGridEvent.Data.ToString());
             DigitalTwinsClient client = null;
-            //log.LogInformation(eventGridEvent.Data.ToString());
-            // Authenticate on ADT APIs
+            
             try
             {
-                
+                // Authenticate on ADT APIs
                 ManagedIdentityCredential cred = new ManagedIdentityCredential(adtAppId);
                 client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation($"ADT service client connection created.");
-            }
-            catch (Exception e)
-            {
-                log.LogError($"ADT service client connection failed. " + e.ToString());
-                return;
-            }
 
-            if (client != null)
-            {
-                try
+                if (client != null)
                 {
                     if (eventGridEvent != null && eventGridEvent.Data != null)
                     {
@@ -97,21 +89,12 @@ namespace SampleFunctionsApp
                         // Update device Temperature property
                         await AdtUtilities.UpdateTwinProperty(client, deviceId, "/Temperature", temperature, log);
 
-                        // Find parent using incoming relationships
-                        // Update parent twin
-                        //string parentId = await FindParent(deviceId, log);
-                        string parentId = await AdtUtilities.FindParentByQuery(client, deviceId, log);
-                        if (parentId != null)
-                        {
-                            await AdtUtilities.UpdateTwinProperty(client, parentId, "/Temperature", temperature, log);
-                        }
-
                     }
                 }
-                catch (Exception e)
-                {
-                    log.LogError($"Error in ingest function: {e.Message}");
-                }
+            }
+            catch (Exception e)
+            {
+                log.LogError($"Error: {e.Message}");
             }
         }
 
