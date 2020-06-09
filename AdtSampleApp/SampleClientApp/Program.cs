@@ -52,7 +52,7 @@ namespace SampleClientApp
             {
                 // Read configuration data from the 
                 IConfiguration config = new ConfigurationBuilder()
-                    .AddJsonFile("serviceConfig.json", true, true)
+                    .AddJsonFile("serviceConfig.json", false, true)
                     .Build();
                 clientId = config["clientId"];
                 tenantId = config["tenantId"];
@@ -61,10 +61,11 @@ namespace SampleClientApp
             {
                 Log.Error($"Could not read service configuration file serviceConfig.json");
                 Log.Alert($"Please copy serviceConfig.json.TEMPLATE to serviceConfig.json");
-                Log.Alert($"and edit to reflect your service connection settings");
+                Log.Alert($"and edit to reflect your service connection settings.");
+                Log.Alert($"Make sure that 'Copy always' or 'Copy if newer' is set for serviceConfig.json in VS file properties");
                 Environment.Exit(0);
             }
-            
+
             Log.Ok("Authenticating...");
             try
             {
@@ -83,11 +84,13 @@ namespace SampleClientApp
                 catch (Exception e)
                 {
                     Log.Error($"Authentication or client creation error: {e.Message}");
+                    Log.Alert($"Have you checked that the configuration in serviceConfig.json is correct?");
                     Environment.Exit(0);
                 }
             } catch(Exception e)
             {
                 Log.Error($"Authentication or client creation error: {e.Message}");
+                Log.Alert($"Have you checked that the configuration in serviceConfig.json is correct?");
                 Environment.Exit(0);
             }
             

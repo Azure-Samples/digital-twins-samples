@@ -323,8 +323,10 @@ namespace SampleClientApp
             }
             Log.Alert($"Submitting query: {query}...");
             List<string> reslist = await Query(query);
-            foreach (string item in reslist)
-                LogResponse(item);
+            if (reslist != null) {
+                foreach (string item in reslist)
+                    LogResponse(item);
+            }
             Log.Out("End Query");
         }
 
