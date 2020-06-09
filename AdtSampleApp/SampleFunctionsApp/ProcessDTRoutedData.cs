@@ -60,7 +60,7 @@ namespace SampleFunctionsApp
                         log.LogInformation("Reading event from " + twinId + ": " + eventGridEvent.EventType.ToString()+ ": "+ message["data"]);
                         
                         //Find and update parent Twin
-                        string parentId = await AdtUtilities.FindParentByQuery(client, twinId, log);
+                        string parentId = await AdtUtilities.FindParent(client, twinId, "contains", log);
                         if (parentId != null)
                         {
                             // Read properties which values have been changed in each operation
