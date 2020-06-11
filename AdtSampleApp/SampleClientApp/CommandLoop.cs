@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-/*using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;*/
 
 using Azure.DigitalTwins.Core;
 using Azure.DigitalTwins.Core.Serialization;
@@ -186,8 +184,6 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                //Response<ModelData> res = await client.DeleteModelAsync(model_id);
-                //LogResponse(res.Value.Model);
                 await client.DeleteModelAsync(model_id);
                 Log.Ok("Model deleted successfully");
             }
@@ -1140,7 +1136,6 @@ namespace SampleClientApp
                 Log.Out("Null response");
             else
             {
-                //string res_json = JsonConvert.SerializeObject(res, Formatting.Indented);
                 Console.WriteLine(PrettifyJson(res));
             }
         }
