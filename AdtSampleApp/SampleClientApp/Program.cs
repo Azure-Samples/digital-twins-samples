@@ -15,14 +15,6 @@ using Azure.DigitalTwins.Core.Models;
 using System.Runtime.InteropServices;
 using Azure;
 
-
-//
-// Todo: Replace use of newtonsoft to Json.Text.Json
-// Todo: Remove the hack to force authentication right at the beginning...
-// Todo: Have the build move the dtdl files to the exe directory?
-// Todo: Need to decide between config and env variables
-//
-
 namespace SampleClientApp
 {
     public class Program
@@ -72,7 +64,6 @@ namespace SampleClientApp
                 var credential = new InteractiveBrowserCredential(tenantId, clientId);
                 client = new DigitalTwinsClient(new Uri(adtInstanceUrl), credential);
                 // force authentication to happen here
-                // (for some reason this only happens on first call)
                 try
                 {
                     client.GetDigitalTwin("---");
