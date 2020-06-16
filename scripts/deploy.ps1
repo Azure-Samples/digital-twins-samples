@@ -86,7 +86,7 @@ if ($cleanup) {
     }
 
     Write-Host "Invoking instance deletion..."
-    az dt delete -n $name -g $group -o json --only-show-errors 2>$null
+    az dt delete -n $name -g $resource_group -o json --only-show-errors 2>$null
 
     Write-Host "Waiting $instanceDeleteCooloffSec second cool off period..."
     Start-Sleep -Seconds $instanceDeleteCooloffSec
@@ -98,9 +98,6 @@ if ($cleanup) {
     Write-Host "Completed"
     return
 }
-
-#install extension
-$needs_extension = $true
 
 Write-Host "Checking for legacy azure-cli-iot-ext..."
 $azresult = (az extension show --name azure-cli-iot-ext --query name -o json 2>$null) | ConvertFrom-Json
@@ -114,27 +111,20 @@ if (!$azresult) {
     }
 }
 
-Write-Host "Checking for outdated IoT CLI extension (azure-iot)"
+Write-Host "Ensuring latest Azure IoT CLI is installed"
 $azresult = (az extension show --name azure-iot --query version -o json --only-show-errors 2>$null) | ConvertFrom-Json
-if ($azresult -and ![string]::IsNullOrEmpty($azresult) -and "0.0.1.dev8" -ne $azresult) {
-    $needs_extension = $true
-    Write-Host "Removing azure-iot: 'az extension remove --name azure-iot'"
+if ($azresult) {
+    Write-Host "Removing existing azure-iot CLI extension: 'az extension remove --name azure-iot'"
     $azresult = (az extension remove --name azure-iot -o json --only-show-errors 2>$null) | ConvertFrom-Json
-
-    if(!$azresult) {
+    if($azresult) {
         throw "Unable to remove azure-iot CLI extension"
     }
-} elseif ($azresult) {
-    Write-Host "Azure IoT CLI extension is up-to-date"
-    $needs_extension = $false
 }
 
-if ($needs_extension) {
-    $extension_file = "azure_iot-0.0.1.dev8-py2.py3-none-any.whl"
-    Write-Host "Downloading updated IoT CLI extension $extension_file"
-    Invoke-WebRequest "https://github.com/Azure/azure-digital-twins/blob/private-preview/CLI/$extension_file?raw=true" -OutFile ".\$extension_file"
-    Write-Host "Adding extension: 'az extension add --source $extension_file'"
-    $azresult = (az extension add --source $extension_file -y -o json --only-show-errors 2>$null) | ConvertFrom-Json
+Write-Host "Installing latest azure-iot CLI extension: 'az extension add --name azure-iot'"
+$azresult = (az extension add --name azure-iot -o json --only-show-errors 2>$null) | ConvertFrom-Json
+if($azresult) {
+    throw "Error installing azure-iot CLI extension"
 }
 
 # remove any old version of EventGrid extension
@@ -161,7 +151,7 @@ $config.subscription = $subscription
 Write-Host "Setting active subscription: 'az account set -s $subscription'"
 $azresult = (az account set -s $subscription) | ConvertFrom-Json
 # az account set has no output so we have to double check
-$azresult = (az account show --query id -o json --only-show-errors 2>$null)
+$azresult = (az account show --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if($azresult) {
     $subscription = $azresult
     $config.subscription = $azresult
@@ -273,8 +263,8 @@ if (Get-Member -InputObject $config -Name "hostname" -MemberType Properties) {
 #assign user role
 Write-Host "Querying CLI user..."
 $cliUser = az account list --query "[?isDefault && state == 'Enabled'] | [0].user.name" 2>$null
-Write-Host "Found $cliUser. Setting assignee $cliUser as owner: 'az dt rbac assign-role -n $name -g $group --role owner --assignee $cliUser'"
-$result = (az dt rbac assign-role -n $name -g $group --role owner --assignee $cliUser -o json --only-show-errors 2>$null) | ConvertFrom-Json
+Write-Host "Found $cliUser. Setting assignee $cliUser as owner: 'az dt role-assignment create -n $name -g $resource_group --role ""Azure Digital Twins Owner (Preview)"" --assignee $cliUser'"
+$result = (az dt role-assignment create -n $name -g $resource_group --role "Azure Digital Twins Owner (Preview)" --assignee $cliUser -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if ($result){
     Write-Host "Waiting $cooloff seconds for propagation..."
     Start-Sleep -Seconds $cooloff
@@ -282,8 +272,8 @@ if ($result){
 Write-Host "Found $cliUser. Querying user objectId..."
 $userObjectId =  az ad user show --id $cliUser --query objectId 2>$null
 
-Write-Host "Found $userObjectId. Setting assignee $userObjectId as owner: 'az dt rbac assign-role -n $name -g $group --role owner --assignee $userObjectId'"
-$result = (az dt rbac assign-role -n $name -g $group --role owner --assignee $userObjectId -o json --only-show-errors 2>$null) | ConvertFrom-Json
+Write-Host "Found $userObjectId. Setting assignee $userObjectId as owner: 'az dt role-assignment create -n $name -g $resource_group --role ""Azure Digital Twins Owner (Preview)"" --assignee $userObjectId'"
+$result = (az dt role-assignment create -n $name -g $resource_group --role "Azure Digital Twins Owner (Preview)" --assignee $userObjectId -o json --only-show-errors 2>$null) | ConvertFrom-Json
 
 if ($result){
     Write-Host "Waiting $cooloff seconds for propagation..."
@@ -468,8 +458,8 @@ if ($endToEnd) {
     }
     if(Get-Member -InputObject $azresult -Name "principalId" -MemberType Properties) {
         $function_principal = $azresult.principalId
-        Write-Host "Assigning Function App identity the role of owner to Digital Twins instance: 'az dt rbac assign-role --assignee $function_principal --dtn $name --role owner'"
-        $azresult = (az dt rbac assign-role --assignee $function_principal --dtn $name --role owner -o json --only-show-errors 2>$null) | ConvertFrom-Json
+        Write-Host "Assigning Function App identity the role of owner to Digital Twins instance: 'az dt role-assignment create --assignee $function_principal --dtn $name --role ""Azure Digital Twins Owner (Preview)""'"
+        $azresult = (az dt role-assignment create --assignee $function_principal --dtn $name --role "Azure Digital Twins Owner (Preview)" -o json --only-show-errors 2>$null) | ConvertFrom-Json
     } else {
         throw "Unable to find principalId for Azure Function identity"
     }
