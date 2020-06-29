@@ -185,9 +185,29 @@ if (Get-Member -InputObject $config -Name "location" -MemberType Properties) {
 } else {
     $config | Add-Member -Name "location" -Value "" -MemberType NoteProperty
 }
+$valid_locations = (az account list-locations -o json) | ConvertFrom-Json
+if(![string]::IsNullOrWhiteSpace($location)) {
+    $valid_location = [System.Linq.Enumerable]::FirstOrDefault($valid_locations, [Func[object, bool]] { param($x) $location -eq $x.name -or $location -like $valid_locations.displayName})
+    if($valid_location) {
+        $location = $valid_location.name
+    } else {
+        $location = ""
+    }
+}
 
-while ([string]::IsNullOrEmpty($location)) {
-    $location = Read-Host "Please specify an ADT-enabled location for your solution"
+while ([string]::IsNullOrWhiteSpace($location)) {
+    $location = Read-Host "Please specify a valid ADT-enabled location for your solution"
+    # check if valid location
+    $valid_location = [System.Linq.Enumerable]::FirstOrDefault($valid_locations, [Func[object, bool]] { param($x) $location -eq $x.name -or $location -like $valid_locations.displayName})
+    if($valid_location) {
+        $location = $valid_location.name
+    } else {
+        $location = ""
+    }
+    # check if we set location
+    if ([string]::IsNullOrWhiteSpace($location)) {
+        Write-Host "Invalid value specified for location."
+    }
 }
 
 $config.location = $location
@@ -212,7 +232,10 @@ Write-Host "Checking for resource group: $resource_group"
 $azresult = (az group show --name $resource_group --query properties.provisioningState -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if(!$azresult) {
     Write-Host "Creating resource group: 'az group create --name $resource_group --location $location'"
-    (az group create --name $resource_group --location $location --only-show-errors)
+    $azresult = (az group create --name $resource_group --location $location --only-show-errors -o json 2>$null) | ConvertFrom-Json
+    if (!$?) {
+        throw $azresult
+    }
 } elseif ("Succeeded" -ne $azresult) {
     Write-Host "Resource group $resource_group exists but isn't fully provisioned waiting for $cooloff seconds"
     Start-Sleep -Seconds $cooloff
@@ -243,7 +266,10 @@ $config.name = $name
 $azresult = (az dt show --dt-name $name --query provisioningState -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if(!$azresult) {
     Write-Host "Creating Azure Digital Twins resource: 'az dt create --dt-name $name -g $resource_group -l $location'"
-    (az dt create --dt-name $name -g $resource_group -l $location --only-show-errors)
+    $azresult = az dt create --dt-name $name -g $resource_group -l $location --only-show-errors -o json | ConvertFrom-Json
+    if (!$?) {
+        throw $azresult
+    }
     Write-Host "Waiting on Digital Twins post-provisioning"
     Start-Sleep -Seconds $cooloff
 } elseif ("Succeeded" -ne $azresult) {
