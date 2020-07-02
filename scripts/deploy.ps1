@@ -29,10 +29,7 @@
 param(
     [Parameter(Mandatory=$false)]
     [switch]
-    $endToEnd = $false,
-    [Parameter(Mandatory=$false)]
-    [switch]
-    $cleanup = $false
+    $endToEnd = $false
 )
 
 function Write-ManifestFile {
@@ -54,49 +51,6 @@ $configFile = ".\config.json"
 $config = "{}" | ConvertFrom-Json
 if([System.IO.File]::Exists($configFile)) {
     $config = Get-Content $configFile | ConvertFrom-Json
-}
-if ($cleanup) {
-    $routeDeleteCooloffSec = 3
-    $endpointDeleteCooloffSec = 10
-    $instanceDeleteCooloffSec = 30
-
-    # Currently, in order to delete a DT instance, you have to delete
-    # all endpoint associated routes then delete all endpoints
-    $name = $config.name
-    $resource_group = $config.resource_group
-    Write-Host "Deleting instance $name in group $resource_group..."
-
-    Write-Host "Deletion prereq: Querying instance for routes..."
-    $routesResult = (az dt route list -n $name -g $resource_group -o json --only-show-errors 2>$null) | ConvertFrom-Json
-
-    foreach($route in $routesResult) {
-        Write-Host "Deleting route: " $route.id
-        az dt route delete -n $name --rn $route.id -g $resource_group -o json --only-show-errors 2>$null
-        Start-Sleep -Seconds $routeDeleteCooloffSec
-    }
-
-    Write-Host "Deletion prereq: Querying instance for endpoints..."
-    $endpointsResult = (az dt endpoint list -n $name -g $resource_group -o json --only-show-errors 2>$null) | ConvertFrom-Json
-
-    foreach($endpoint in $endpointsResult) {
-        Write-Host "Deleting endpoint: " $endpoint.name
-        (az dt endpoint delete -n $name --en $endpoint.name -g $resource_group -o json --only-show-errors 2>$null)
-        Write-Host "Waiting $endpointDeleteCooloffSec second cool off period..."
-        Start-Sleep -Seconds $endpointDeleteCooloffSec
-    }
-
-    Write-Host "Invoking instance deletion..."
-    az dt delete -n $name -g $resource_group -o json --only-show-errors 2>$null
-
-    Write-Host "Waiting $instanceDeleteCooloffSec second cool off period..."
-    Start-Sleep -Seconds $instanceDeleteCooloffSec
-
-    $delete_rg = Read-Host "Do you want to remove Resource Group: $resource_group (y/N)?"
-    if ($delete_rg -Match "(y|Y).*") {
-        (az group delete --name $resource_group --yes -o json --only-show-errors 2>$null)
-    }
-    Write-Host "Completed"
-    return
 }
 
 Write-Host "Checking for legacy azure-cli-iot-ext..."
