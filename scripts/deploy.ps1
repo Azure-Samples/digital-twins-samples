@@ -356,8 +356,8 @@ if ($endToEnd) {
     $azresult = (az iot hub show --name $iot_hub --query name -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
         Write-Host "Creating IoT Hub: 'az iot hub create --name $iot_hub -g $resource_group --sku S1'"
-        $azresult = (az iot hub create --name $iot_hub -g $resource_group --sku S1 -o json --only-show-errors 2>$null) | ConvertFrom-Json
-        if(!$azresult) {
+        $azresult = (az iot hub create --name $iot_hub -g $resource_group --sku S1 -o json --only-show-errors) | ConvertFrom-Json
+        if($? -and !$azresult) {
             throw "Unable to create IoT Hub"
         }
     }
@@ -378,10 +378,9 @@ if ($endToEnd) {
     $azresult = (az eventgrid topic show --name $topic_name --resource-group $resource_group --query name -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
         Write-Host "Creating EventGrid topic: 'az eventgrid topic create -g $resource_group --name $topic_name -l $location'"
-        $azresult = (az eventgrid topic create -g $resource_group --name $topic_name -l $location -o json --only-show-errors 2>$null) | ConvertFrom-Json
-
-        if(!$azresult) {
-            throw "Unable to create EventGrid topic: "
+        $azresult = (az eventgrid topic create -g $resource_group --name $topic_name -l $location -o json --only-show-errors) | ConvertFrom-Json
+        if($? -and !$azresult) {
+            throw "Unable to create EventGrid topic"
         }
     }
     $config | ConvertTo-Json -Depth 100 | Out-File $configFile
@@ -400,9 +399,9 @@ if ($endToEnd) {
     $azresult = (az dt endpoint show --dtn $name -g $resource_group --en $endpoint_name --query name -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
         Write-Host "Creating endpoint on Digital Twins instance: 'az dt endpoint create eventgrid --dtn $name -g $resource_group --en $endpoint_name --egg $resource_group --egt $topic_name'"
-        $azresult = (az dt endpoint create eventgrid --dtn $name -g $resource_group --en $endpoint_name --egg $resource_group --egt $topic_name -o json --only-show-errors 2>$null) | ConvertFrom-Json
+        $azresult = (az dt endpoint create eventgrid --dtn $name -g $resource_group --en $endpoint_name --egg $resource_group --egt $topic_name -o json --only-show-errors) | ConvertFrom-Json
 
-        if(!$azresult) {
+        if($? -and !$azresult) {
             throw "Unable to create endpoint"
         }
         Write-Host "Waiting for endpoint post provisioning"
@@ -424,9 +423,9 @@ if ($endToEnd) {
     $azresult = (az dt route show --dtn $name -g $resource_group --rn $route_name --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
         Write-Host "Creating route on Digital Twins instance: 'az dt route create --dtn $name --endpoint-name $endpoint_name --route-name $route_name'"
-        $azresult = (az dt route create --dtn $name --endpoint-name $endpoint_name --route-name $route_name -o json --only-show-errors 2>$null) | ConvertFrom-Json
+        $azresult = (az dt route create --dtn $name --endpoint-name $endpoint_name --route-name $route_name -o json --only-show-errors) | ConvertFrom-Json
 
-        if(!$azresult) {
+        if($? -and !$azresult) {
             throw "Unable to create route"
         }
     }
@@ -446,9 +445,9 @@ if ($endToEnd) {
     $azresult = (az storage account show --name $storage_account --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
         Write-Host "Creating storage account: 'az storage account create -n $storage_account -g $resource_group -l $location --sku Standard_LRS'"
-        $azresult = (az storage account create -n $storage_account -g $resource_group -l $location --sku Standard_LRS -o json --only-show-errors 2>$null) | ConvertFrom-Json
+        $azresult = (az storage account create -n $storage_account -g $resource_group -l $location --sku Standard_LRS -o json --only-show-errors) | ConvertFrom-Json
 
-        if(!$azresult) {
+        if($? -and !$azresult) {
             throw "Unable to create storage account"
         }
     }
@@ -468,9 +467,9 @@ if ($endToEnd) {
     $azresult = (az functionapp show --name $function_app --resource-group $resource_group --query name -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
             Write-Host "Creating Azure Function: 'az functionapp create --consumption-plan-location $location --name $function_app --os-type Windows --resource-group $resource_group --runtime dotnet --storage-account $storage_account'"
-            $azresult = (az functionapp create --consumption-plan-location $location --name $function_app --os-type Windows --resource-group $resource_group --runtime dotnet --storage-account $storage_account -o json --only-show-errors 2>$null) | ConvertFrom-Json
+            $azresult = (az functionapp create --consumption-plan-location $location --name $function_app --os-type Windows --resource-group $resource_group --runtime dotnet --storage-account $storage_account -o json --only-show-errors) | ConvertFrom-Json
 
-            if(!$azresult) {
+            if($? -and !$azresult) {
                 throw "Unable to create Azure Function"
             }
     }
@@ -478,8 +477,8 @@ if ($endToEnd) {
 
     #assign function identity
     Write-Host "Creating system-managed identity for Azure Function: 'az functionapp identity assign -g $resource_group -n $function_app'"
-    $azresult = (az functionapp identity assign -g $resource_group -n $function_app -o json --only-show-errors 2>$null) |ConvertFrom-Json
-    if(!$azresult) {
+    $azresult = (az functionapp identity assign -g $resource_group -n $function_app -o json --only-show-errors) |ConvertFrom-Json
+    if($? -and !$azresult) {
         throw "Unable to create system-managed identity for Azure Function"
     }
     if(Get-Member -InputObject $azresult -Name "principalId" -MemberType Properties) {
@@ -531,7 +530,7 @@ if ($endToEnd) {
         $config.function_code = $function_code
     }
 
-    $iot_hub_id = (az iot hub show --name $iot_hub -g $resource_group --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
+    $iot_hub_id = (az iot hub show --name $iot_hub --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
     $function_host = (az functionapp show --name $function_app -g $resource_group --query defaultHostName -o json --only-show-errors 2>$null) |ConvertFrom-Json
     Write-Host "Checking for existing ingress event subscription: 'az eventgrid event-subscription list --source-resource-id $iot_hub_id --query '[0].name' --only-show-errors'"
     $azresult = (az eventgrid event-subscription list --source-resource-id $iot_hub_id --query '[0].name' --only-show-errors -o json 2>$null) |ConvertFrom-Json
