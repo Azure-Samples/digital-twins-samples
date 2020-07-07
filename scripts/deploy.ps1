@@ -45,6 +45,7 @@ function Write-ManifestFile {
 
 $env:AZURE_CORE_NO_COLOR='True'
 $cooloff = 20
+$fileCooloff = 2
 
 #read config
 $configFile = ".\config.json"
@@ -53,40 +54,45 @@ if([System.IO.File]::Exists($configFile)) {
     $config = Get-Content $configFile | ConvertFrom-Json
 }
 
-Write-Host "Checking for legacy azure-cli-iot-ext..."
+Write-Host "Checking for legacy azure-cli-iot-ext..." -ForegroundColor DarkGray
 $azresult = (az extension show --name azure-cli-iot-ext --query name -o json 2>$null) | ConvertFrom-Json
 if (!$azresult) {
-    Write-Host "Legacy IoT CLI extension not found, continuing..."
+    Write-Host "Legacy IoT CLI extension not found, continuing..." -ForegroundColor DarkGray
 } else {
-    Write-Host "Attempting to remove legacy IoT CLI extension: 'az extension remove --name azure-cli-iot-ext'"
+    Write-Host "Attempting to remove legacy IoT CLI extension: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az extension remove --name azure-cli-iot-ext'" -ForegroundColor Yellow
     $azresult = (az extension remove --name azure-cli-iot-ext -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
         throw "Unable to remove azure-cli-iot-ext"
     }
 }
 
-Write-Host "Ensuring latest Azure IoT CLI is installed"
+Write-Host "Ensuring latest Azure IoT CLI is installed" -ForegroundColor DarkGray
 $azresult = (az extension show --name azure-iot --query version -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if ($azresult) {
-    Write-Host "Removing existing azure-iot CLI extension: 'az extension remove --name azure-iot'"
+    Write-Host "Removing existing azure-iot CLI extension: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az extension remove --name azure-iot'" -ForegroundColor Yellow
     $azresult = (az extension remove --name azure-iot -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if($azresult) {
         throw "Unable to remove azure-iot CLI extension"
     }
 }
 
-Write-Host "Installing latest azure-iot CLI extension: 'az extension add --name azure-iot'"
+Write-Host "Installing latest azure-iot CLI extension: " -ForegroundColor DarkGray -NoNewline
+Write-Host "'az extension add --name azure-iot'" -ForegroundColor Yellow
 $azresult = (az extension add --name azure-iot -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if($azresult) {
     throw "Error installing azure-iot CLI extension"
 }
 
 # remove any old version of EventGrid extension
-Write-Host "Removing any existing EventGrid CLI extension: 'az extension remove -n eventgrid'"
+Write-Host "Removing any existing EventGrid CLI extension: " -ForegroundColor DarkGray -NoNewline
+Write-Host "'az extension remove -n eventgrid'" -ForegroundColor Yellow
 (az extension remove -n eventgrid -o json --only-show-errors 2>$null)
 
 #install latest version of eventgrid extension
-Write-Host "Installing the latest EventGrid CLI extension: 'az extension add -n eventgrid'"
+Write-Host "Installing the latest EventGrid CLI extension: " -ForegroundColor DarkGray -NoNewline
+Write-Host "'az extension add -n eventgrid'" -ForegroundColor Yellow
 (az extension add -n eventgrid -o json --only-show-errors 2>$null)
 
 #set subscription
@@ -100,15 +106,16 @@ if (Get-Member -InputObject $config -Name "subscription" -MemberType Properties)
 while ([string]::IsNullOrEmpty($subscription)) {
     $subscription = Read-Host "Please specify your Azure subscription id"
 }
-$config.subscription = $subscription
-
-Write-Host "Setting active subscription: 'az account set -s $subscription'"
+Write-Host "Setting active subscription: " -ForegroundColor DarkGray -NoNewline
+Write-Host "'az account set -s $subscription'" -ForegroundColor Yellow
 $azresult = (az account set -s $subscription) | ConvertFrom-Json
-# az account set has no output so we have to double check
-$azresult = (az account show --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
-if($azresult) {
-    $subscription = $azresult
-    $config.subscription = $azresult
+
+$azresult = (az account show --query '[id, name]' -o json --only-show-errors) | ConvertFrom-Json
+
+if($azresult -and ($azresult[0] -eq $subscription -or $azresult[1] -eq $subscription)) {
+    $subscription = $azresult[0]
+    # $config.subscription = $azresult
+    Write-Host "Subscription set to '$subscription'" -ForegroundColor DarkGray
 } else {
     throw "Unable to set subscription"
 }
@@ -124,7 +131,8 @@ if (Get-Member -InputObject $config -Name "tenant_id" -MemberType Properties) {
 }
 
 while ([string]::IsNullOrEmpty($tenantId)) {
-    Write-Host "Getting tenant: 'az account show --query tenantId'"
+    Write-Host "Getting tenant: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az account show --query tenantId'" -ForegroundColor Yellow
     $tenantId = (az account show --query tenantId) | ConvertFrom-Json
 }
 
@@ -139,28 +147,36 @@ if (Get-Member -InputObject $config -Name "location" -MemberType Properties) {
 } else {
     $config | Add-Member -Name "location" -Value "" -MemberType NoteProperty
 }
-$valid_locations = (az account list-locations -o json) | ConvertFrom-Json
+# get locations (Display Names) where Azure Digital Twins is enabled
+$twin_locations = ((az provider show -n Microsoft.DigitalTwins --query "resourceTypes[?resourceType=='digitalTwinsInstances'].locations" -o json) | ConvertFrom-Json)[0]
+# get all locations available in subscription and filter to values with display name in twin locations. This allows for westus2 instead of escaping "West US 2" throughout the script
+$valid_locations = (az account list-locations -o json | ConvertFrom-Json) | Where-Object -FilterScript { [System.Linq.Enumerable]::FirstOrDefault($twin_locations, [Func[object, bool]] {param($y) $y -eq $_.displayName}) }
 if(![string]::IsNullOrWhiteSpace($location)) {
-    $valid_location = [System.Linq.Enumerable]::FirstOrDefault($valid_locations, [Func[object, bool]] { param($x) $location -eq $x.name -or $location -like $valid_locations.displayName})
+    $valid_location = $valid_locations | Where-Object -FilterScript { $location -eq $_.name -or $location -like $_.displayName}
     if($valid_location) {
         $location = $valid_location.name
     } else {
+        Write-Host "Location '$location' is not an Azure Digital Twins enabled location. Clearing input." -ForegroundColor Red
         $location = ""
     }
 }
 
 while ([string]::IsNullOrWhiteSpace($location)) {
-    $location = Read-Host "Please specify a valid ADT-enabled location for your solution"
+    $location = Read-Host "Please specify a valid Azure Digital Twins-enabled location for your solution"
     # check if valid location
-    $valid_location = [System.Linq.Enumerable]::FirstOrDefault($valid_locations, [Func[object, bool]] { param($x) $location -eq $x.name -or $location -like $valid_locations.displayName})
+    $valid_location = $valid_locations | Where-Object -FilterScript { $location -eq $_.name -or $location -like $_.displayName}
     if($valid_location) {
         $location = $valid_location.name
     } else {
+        Write-Host "Location '$location' is not an Azure Digital Twins enabled location. Clearing input." -ForegroundColor Red
         $location = ""
     }
     # check if we set location
     if ([string]::IsNullOrWhiteSpace($location)) {
-        Write-Host "Invalid value specified for location."
+        Write-Host "Valid locations include:"
+        foreach ($location_item in $valid_locations) {
+            Write-Host $location_item.name -ForegroundColor Blue
+        }
     }
 }
 
@@ -182,16 +198,18 @@ while ([string]::IsNullOrEmpty($resource_group)) {
 
 $config.resource_group = $resource_group
 
-Write-Host "Checking for resource group: $resource_group"
+Write-Host "Checking for resource group: " -ForegroundColor DarkGray -NoNewline
+Write-Host "'az group show --name $resource_group'" -ForegroundColor Yellow
 $azresult = (az group show --name $resource_group --query properties.provisioningState -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if(!$azresult) {
-    Write-Host "Creating resource group: 'az group create --name $resource_group --location $location'"
+    Write-Host "Creating resource group: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az group create --name $resource_group --location $location'" -ForegroundColor Yellow
     $azresult = (az group create --name $resource_group --location $location --only-show-errors -o json 2>$null) | ConvertFrom-Json
     if (!$?) {
         throw $azresult
     }
 } elseif ("Succeeded" -ne $azresult) {
-    Write-Host "Resource group $resource_group exists but isn't fully provisioned waiting for $cooloff seconds"
+    Write-Host "Resource group $resource_group exists but isn't fully provisioned waiting for $cooloff seconds" -ForegroundColor DarkGray
     Start-Sleep -Seconds $cooloff
 }
 $config | ConvertTo-Json -Depth 100 | Out-File $configFile
@@ -199,7 +217,8 @@ $config | ConvertTo-Json -Depth 100 | Out-File $configFile
 # register namespace
 $azresult = (az provider show -n Microsoft.DigitalTwins -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if(!$azresult) {
-    Write-Host "Registering Azure Digital Twins resource provider: 'az provider register --namespace 'Microsoft.DigitalTwins''"
+    Write-Host "Registering Azure Digital Twins resource provider: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az provider register --namespace 'Microsoft.DigitalTwins''" -ForegroundColor Yellow
     (az provider register --namespace "Microsoft.DigitalTwins" --only-show-errors)
 }
 
@@ -219,15 +238,16 @@ $config.name = $name
 #create adt instance
 $azresult = (az dt show --dt-name $name --query provisioningState -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if(!$azresult) {
-    Write-Host "Creating Azure Digital Twins resource: 'az dt create --dt-name $name -g $resource_group -l $location'"
+    Write-Host "Creating Azure Digital Twins resource: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az dt create --dt-name $name -g $resource_group -l $location'" -ForegroundColor Yellow
     $azresult = az dt create --dt-name $name -g $resource_group -l $location --only-show-errors -o json | ConvertFrom-Json
     if (!$?) {
         throw $azresult
     }
-    Write-Host "Waiting on Digital Twins post-provisioning"
+    Write-Host "Waiting on Digital Twins post-provisioning" -ForegroundColor DarkGray
     Start-Sleep -Seconds $cooloff
 } elseif ("Succeeded" -ne $azresult) {
-    Write-Host "Azure Digital Twin instance $name has not completed provisioning waiting for $cooloff seconds"
+    Write-Host "Azure Digital Twin instance $name has not completed provisioning waiting for $cooloff seconds" -ForegroundColor DarkGray
     Start-Sleep -Seconds $cooloff
 }
 $config | ConvertTo-Json -Depth 100 | Out-File $configFile
@@ -241,22 +261,24 @@ if (Get-Member -InputObject $config -Name "hostname" -MemberType Properties) {
 }
 
 #assign user role
-Write-Host "Querying CLI user..."
+Write-Host "Querying CLI user..." -ForegroundColor DarkGray
 $cliUser = az account list --query "[?isDefault && state == 'Enabled'] | [0].user.name" 2>$null
-Write-Host "Found $cliUser. Setting assignee $cliUser as owner: 'az dt role-assignment create -n $name -g $resource_group --role ""Azure Digital Twins Owner (Preview)"" --assignee $cliUser'"
+Write-Host "Found $cliUser. Setting assignee $cliUser as owner: " -ForegroundColor DarkGray -NoNewline
+Write-Host "'az dt role-assignment create -n $name -g $resource_group --role ""Azure Digital Twins Owner (Preview)"" --assignee $cliUser'" -ForegroundColor Yellow
 $result = (az dt role-assignment create -n $name -g $resource_group --role "Azure Digital Twins Owner (Preview)" --assignee $cliUser -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if ($result){
-    Write-Host "Waiting $cooloff seconds for propagation..."
+    Write-Host "Waiting $cooloff seconds for propagation..." -ForegroundColor DarkGray
     Start-Sleep -Seconds $cooloff
 }
-Write-Host "Found $cliUser. Querying user objectId..."
+Write-Host "Found $cliUser. Querying user objectId..." -ForegroundColor DarkGray
 $userObjectId =  az ad user show --id $cliUser --query objectId 2>$null
 
-Write-Host "Found $userObjectId. Setting assignee $userObjectId as owner: 'az dt role-assignment create -n $name -g $resource_group --role ""Azure Digital Twins Owner (Preview)"" --assignee $userObjectId'"
+Write-Host "Found $userObjectId. Setting assignee $userObjectId as owner: " -ForegroundColor DarkGray -NoNewline
+Write-Host "'az dt role-assignment create -n $name -g $resource_group --role ""Azure Digital Twins Owner (Preview)"" --assignee $userObjectId'" -ForegroundColor Yellow
 $result = (az dt role-assignment create -n $name -g $resource_group --role "Azure Digital Twins Owner (Preview)" --assignee $userObjectId -o json --only-show-errors 2>$null) | ConvertFrom-Json
 
 if ($result){
-    Write-Host "Waiting $cooloff seconds for propagation..."
+    Write-Host "Waiting $cooloff seconds for propagation..." -ForegroundColor DarkGray
     Start-Sleep -Seconds $cooloff
 }
 
@@ -273,7 +295,8 @@ while ([string]::IsNullOrEmpty($display_name)) {
 }
 $config.display_name = $display_name
 
-Write-Host "Searching for existing Azure Active Directory application: 'az ad app list --display-name $display_name'"
+Write-Host "Searching for existing Azure Active Directory application: " -ForegroundColor DarkGray -NoNewline
+Write-Host "'az ad app list --display-name $display_name'" -ForegroundColor Yellow
 $application_id = (az ad app list --display-name $display_name --query '[0].appId' -o json --only-show-errors 2>$null) | ConvertFrom-Json
 if(!$application_id) {
     # we need to create it
@@ -289,7 +312,8 @@ if(!$application_id) {
     }
     $config.reply_url = $reply_url
 
-    Write-Host "Creating AAD application registration: 'az ad app create --display-name $display_name --native-app --required-resource-accesses ./manifest.json --reply-url $reply_url'"
+    Write-Host "Creating AAD application registration: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az ad app create --display-name $display_name --native-app --required-resource-accesses ./manifest.json --reply-url $reply_url'" -ForegroundColor Yellow
     (az ad app create --display-name $display_name --native-app --required-resource-accesses ./manifest.json --reply-url $reply_url -o json --only-show-errors 2>$null)
 }
 $config | ConvertTo-Json -Depth 100 | Out-File $configFile
@@ -309,7 +333,8 @@ if ($endToEnd) {
     # check for hub already exists
     $azresult = (az iot hub show --name $iot_hub --query name -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
-        Write-Host "Creating IoT Hub: 'az iot hub create --name $iot_hub -g $resource_group --sku S1'"
+        Write-Host "Creating IoT Hub: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az iot hub create --name $iot_hub -g $resource_group --sku S1'" -ForegroundColor Yellow
         $azresult = (az iot hub create --name $iot_hub -g $resource_group --sku S1 -o json --only-show-errors) | ConvertFrom-Json
         if($? -and !$azresult) {
             throw "Unable to create IoT Hub"
@@ -331,7 +356,8 @@ if ($endToEnd) {
 
     $azresult = (az eventgrid topic show --name $topic_name --resource-group $resource_group --query name -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
-        Write-Host "Creating EventGrid topic: 'az eventgrid topic create -g $resource_group --name $topic_name -l $location'"
+        Write-Host "Creating EventGrid topic: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az eventgrid topic create -g $resource_group --name $topic_name -l $location'" -ForegroundColor Yellow
         $azresult = (az eventgrid topic create -g $resource_group --name $topic_name -l $location -o json --only-show-errors) | ConvertFrom-Json
         if($? -and !$azresult) {
             throw "Unable to create EventGrid topic"
@@ -352,13 +378,14 @@ if ($endToEnd) {
     $config.endpoint_name = $endpoint_name
     $azresult = (az dt endpoint show --dtn $name -g $resource_group --en $endpoint_name --query name -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
-        Write-Host "Creating endpoint on Digital Twins instance: 'az dt endpoint create eventgrid --dtn $name -g $resource_group --en $endpoint_name --egg $resource_group --egt $topic_name'"
+        Write-Host "Creating endpoint on Digital Twins instance: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az dt endpoint create eventgrid --dtn $name -g $resource_group --en $endpoint_name --egg $resource_group --egt $topic_name'" -ForegroundColor Yellow
         $azresult = (az dt endpoint create eventgrid --dtn $name -g $resource_group --en $endpoint_name --egg $resource_group --egt $topic_name -o json --only-show-errors) | ConvertFrom-Json
 
         if($? -and !$azresult) {
             throw "Unable to create endpoint"
         }
-        Write-Host "Waiting for endpoint post provisioning"
+        Write-Host "Waiting for endpoint post provisioning" -ForegroundColor DarkGray
         Start-Sleep -Seconds $cooloff
     }
     $config | ConvertTo-Json -Depth 100 | Out-File $configFile
@@ -376,11 +403,12 @@ if ($endToEnd) {
     $config.route_name = $route_name
     $azresult = (az dt route show --dtn $name -g $resource_group --rn $route_name --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
-        Write-Host "Creating route on Digital Twins instance: 'az dt route create --dtn $name --endpoint-name $endpoint_name --route-name $route_name'"
+        Write-Host "Creating route on Digital Twins instance: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az dt route create --dtn $name --endpoint-name $endpoint_name --route-name $route_name'" -ForegroundColor Yellow
         $azresult = (az dt route create --dtn $name --endpoint-name $endpoint_name --route-name $route_name -o json --only-show-errors) | ConvertFrom-Json
 
         if($? -and !$azresult) {
-            throw "Unable to create route"
+            throw "Unable to create route. This is typically due to a failure to assign permissions using 'az dt role-assignment' and requires granting your user Azure Digital Twins Owner role to the Digital Twins resource using Azure Portal instead"
         }
     }
     $config | ConvertTo-Json -Depth 100 | Out-File $configFile
@@ -398,7 +426,8 @@ if ($endToEnd) {
     $config.storage_account = $storage_account
     $azresult = (az storage account show --name $storage_account --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
-        Write-Host "Creating storage account: 'az storage account create -n $storage_account -g $resource_group -l $location --sku Standard_LRS'"
+        Write-Host "Creating storage account: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az storage account create -n $storage_account -g $resource_group -l $location --sku Standard_LRS'" -ForegroundColor Yellow
         $azresult = (az storage account create -n $storage_account -g $resource_group -l $location --sku Standard_LRS -o json --only-show-errors) | ConvertFrom-Json
 
         if($? -and !$azresult) {
@@ -420,7 +449,8 @@ if ($endToEnd) {
     $config.function_app = $function_app
     $azresult = (az functionapp show --name $function_app --resource-group $resource_group --query name -o json --only-show-errors 2>$null) | ConvertFrom-Json
     if(!$azresult) {
-            Write-Host "Creating Azure Function: 'az functionapp create --consumption-plan-location $location --name $function_app --os-type Windows --resource-group $resource_group --runtime dotnet --storage-account $storage_account'"
+            Write-Host "Creating Azure Function: " -ForegroundColor DarkGray -NoNewline
+            Write-Host "'az functionapp create --consumption-plan-location $location --name $function_app --os-type Windows --resource-group $resource_group --runtime dotnet --storage-account $storage_account'" -ForegroundColor Yellow
             $azresult = (az functionapp create --consumption-plan-location $location --name $function_app --os-type Windows --resource-group $resource_group --runtime dotnet --storage-account $storage_account -o json --only-show-errors) | ConvertFrom-Json
 
             if($? -and !$azresult) {
@@ -430,14 +460,16 @@ if ($endToEnd) {
     $config | ConvertTo-Json -Depth 100 | Out-File $configFile
 
     #assign function identity
-    Write-Host "Creating system-managed identity for Azure Function: 'az functionapp identity assign -g $resource_group -n $function_app'"
+    Write-Host "Creating system-managed identity for Azure Function: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az functionapp identity assign -g $resource_group -n $function_app'" -ForegroundColor Yellow
     $azresult = (az functionapp identity assign -g $resource_group -n $function_app -o json --only-show-errors) |ConvertFrom-Json
     if($? -and !$azresult) {
         throw "Unable to create system-managed identity for Azure Function"
     }
     if(Get-Member -InputObject $azresult -Name "principalId" -MemberType Properties) {
         $function_principal = $azresult.principalId
-        Write-Host "Assigning Function App identity the role of owner to Digital Twins instance: 'az dt role-assignment create --assignee $function_principal --dtn $name --role ""Azure Digital Twins Owner (Preview)""'"
+        Write-Host "Assigning Function App identity the role of owner to Digital Twins instance: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az dt role-assignment create --assignee $function_principal --dtn $name --role ""Azure Digital Twins Owner (Preview)""'" -ForegroundColor Yellow
         $azresult = (az dt role-assignment create --assignee $function_principal --dtn $name --role "Azure Digital Twins Owner (Preview)" -o json --only-show-errors 2>$null) | ConvertFrom-Json
     } else {
         throw "Unable to find principalId for Azure Function identity"
@@ -477,7 +509,7 @@ if ($endToEnd) {
         $config | Add-Member -Name "function_code" -Value $function_code -MemberType NoteProperty
     }
     if(!$function_code){
-        Write-Host "Unable to find the eventgrid_extension system key used for the ingress/egress functions. Ensure they have been deployed and retrieve the value from the Azure portal."
+        Write-Host "Unable to find the eventgrid_extension system key used for the ingress/egress functions. Ensure they have been deployed and retrieve the value from the Azure portal." -ForegroundColor Red
         while (!$function_code) {
             $function_code = Read-Host "Please specify the value for 'eventgrid_extension' system key"
         }
@@ -486,9 +518,10 @@ if ($endToEnd) {
 
     $iot_hub_id = (az iot hub show --name $iot_hub --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
     $function_host = (az functionapp show --name $function_app -g $resource_group --query defaultHostName -o json --only-show-errors 2>$null) |ConvertFrom-Json
-    Write-Host "Checking for existing ingress event subscription: 'az eventgrid event-subscription list --source-resource-id $iot_hub_id --query '[0].name' --only-show-errors'"
-    $azresult = (az eventgrid event-subscription list --source-resource-id $iot_hub_id --query '[0].name' --only-show-errors -o json 2>$null) |ConvertFrom-Json
-    if(!$azresult -or $azresult -ne $ingress_function) {
+    Write-Host "Checking for existing ingress event subscription: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az eventgrid event-subscription list --source-resource-id $iot_hub_id'" -ForegroundColor Yellow
+    $azresult = (az eventgrid event-subscription list --source-resource-id $iot_hub_id --only-show-errors -o json) | ConvertFrom-Json
+    if(!$azresult -or ![System.Linq.Enumerable]::FirstOrDefault($azresult, [Func[object, bool]] { param($x) $ingress_function -eq $x.name})) {
         $ingress_endpoint = "https://$function_host/runtime/webhooks/EventGrid?functionName=$ingress_function" + "&" + "code=$function_code"
         $ingress_subscription_url = "$iot_hub_id/providers/Microsoft.EventGrid/eventSubscriptions/$ingress_function"
         $body = "{""name"": ""$ingress_function"",""properties"": {""topic"": ""$iot_hub_id"",""destination"": {""endpointType"": ""WebHook"",""properties"": {""endpointUrl"": ""$ingress_endpoint"",""maxEventsPerBatch"": 1,""preferredBatchSizeInKilobytes"": 64}},""filter"": {""includedEventTypes"": [""Microsoft.Devices.DeviceTelemetry""]},""eventDeliverySchema"": ""EventGridSchema""}}" | ConvertTo-Json
@@ -497,19 +530,24 @@ if ($endToEnd) {
         $parameters = "{""api-version"": ""2020-04-01-preview""}"
         $parameters | Out-File ".\ingressparameters.json"
 
-        Write-Host ("Creating ingress Event Grid subscription: 'az rest --method put --uri $ingress_subscription_url -b ""@.\ingressbody.json"" --uri-parameters ""@.\ingressparameters.json""'")
+        Write-Host "Creating ingress Event Grid subscription: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az rest --method put --uri $ingress_subscription_url -b ""@.\ingressbody.json"" --uri-parameters ""@.\ingressparameters.json""'" -ForegroundColor Yellow
+        Start-Sleep -Seconds $fileCooloff
 
-        $azresult = (az rest --method put --uri $ingress_subscription_url -b "@.\ingressbody.json" --uri-parameters "@.\ingressparameters.json" --only-show-errors -o json 2>$null) | ConvertFrom-Json
+        $azresult = (az rest --method put --uri $ingress_subscription_url -b "@.\ingressbody.json" --uri-parameters "@.\ingressparameters.json" -o json) | ConvertFrom-Json
         if(!$azresult) {
             throw "Unable to create Event Grid ingress subscription"
+        } else {
+            Write-Host "Created processing subscription: $azresult" -ForegroundColor DarkGray
         }
     }
 
-    $dt_id = (az dt show --dtn $name --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
-    Write-Host "Checking for existing processing event subscription: 'az eventgrid event-subscription list --source-resource-id $dt_id --query '[0].name' --only-show-errors'"
-    $azresult = (az eventgrid event-subscription list --source-resource-id $dt_id --query '[0].name' --only-show-errors -o json 2>$null) |ConvertFrom-Json
-    if(!$azresult -or $azresult -ne $processing_function) {
-        $eventgrid_id = (az eventgrid topic show -g $resource_group -n $topic_name --only-show-errors --query id -o json 2>$null) | ConvertFrom-Json
+    $eventgrid_id = (az eventgrid topic show -g $resource_group -n $topic_name --only-show-errors --query id -o json 2>$null) | ConvertFrom-Json
+    Write-Host "Checking for existing processing event subscription: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az eventgrid event-subscription list --source-resource-id $eventgrid_id" -ForegroundColor Yellow
+    $azresult = (az eventgrid event-subscription list --source-resource-id $eventgrid_id --only-show-errors -o json) | ConvertFrom-Json
+    if(!$azresult -or ![System.Linq.Enumerable]::FirstOrDefault($azresult, [Func[object, bool]] { param($x) $processing_function -eq $x.name})) {
+
         $function_id = (az functionapp show -g $resource_group -n $function_app --only-show-errors --query id -o json 2>$null) | ConvertFrom-Json
         $full_function_id = "$function_id/functions/$processing_function"
         $body = "{""name"": ""$processing_function"",""properties"": {""topic"": ""$eventgrid_id"",""destination"": {""endpointType"": ""AzureFunction"",""properties"": {""resourceId"": ""$full_function_id"",""maxEventsPerBatch"": 1,""preferredBatchSizeInKilobytes"": 64}},""eventDeliverySchema"": ""EventGridSchema""}}" | ConvertTo-Json
@@ -520,12 +558,18 @@ if ($endToEnd) {
 
         $eventgrid_subscription_url = "$eventgrid_id/providers/Microsoft.EventGrid/eventSubscriptions/$processing_function"
 
-        Write-Host "Creating processsing Event Grid subscription: 'az rest --method put --uri ""$eventgrid_subscription_url"" -b ""@.\proccessingbody.json"" --uri-parameters ""@.\processingparameters.json""'"
-        $azresult = (az rest --method put --uri "$eventgrid_subscription_url" -b "@.\proccessingbody.json" --uri-parameters "@.\processingparameters.json" -o json 2>$null) | ConvertFrom-Json
+        Write-Host "Creating processsing Event Grid subscription: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az rest --method put --uri ""$eventgrid_subscription_url"" -b ""@.\proccessingbody.json"" --uri-parameters ""@.\processingparameters.json""'" -ForegroundColor Yellow
+        Start-Sleep -Seconds $fileCooloff
+
+        $azresult = (az rest --method put --uri "$eventgrid_subscription_url" -b "@.\proccessingbody.json" --uri-parameters "@.\processingparameters.json" -o json) | ConvertFrom-Json
         if(!$azresult) {
             throw "Unable to create Event Grid processing subscription"
+        } else {
+            Write-Host "Created processing subscription: $azresult" -ForegroundColor DarkGray
         }
     }
 }
 # Write the config when done
 $config | ConvertTo-Json -Depth 100 | Out-File $configFile
+Write-Host "Deployment completed successfully" -ForegroundColor Green
