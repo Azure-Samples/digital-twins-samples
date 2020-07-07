@@ -147,28 +147,36 @@ if (Get-Member -InputObject $config -Name "location" -MemberType Properties) {
 } else {
     $config | Add-Member -Name "location" -Value "" -MemberType NoteProperty
 }
-$valid_locations = (az account list-locations -o json) | ConvertFrom-Json
+# get locations (Display Names) where Azure Digital Twins is enabled
+$twin_locations = ((az provider show -n Microsoft.DigitalTwins --query "resourceTypes[?resourceType=='digitalTwinsInstances'].locations" -o json) | ConvertFrom-Json)[0]
+# get all locations available in subscription and filter to values with display name in twin locations. This allows for westus2 instead of escaping "West US 2" throughout the script
+$valid_locations = (az account list-locations -o json | ConvertFrom-Json) | Where-Object -FilterScript { [System.Linq.Enumerable]::FirstOrDefault($twin_locations, [Func[object, bool]] {param($y) $y -eq $_.displayName}) }
 if(![string]::IsNullOrWhiteSpace($location)) {
-    $valid_location = [System.Linq.Enumerable]::FirstOrDefault($valid_locations, [Func[object, bool]] { param($x) $location -eq $x.name -or $location -like $valid_locations.displayName})
+    $valid_location = $valid_locations | Where-Object -FilterScript { $location -eq $_.name -or $location -like $_.displayName}
     if($valid_location) {
         $location = $valid_location.name
     } else {
+        Write-Host "Location '$location' is not an Azure Digital Twins enabled location. Clearing input." -ForegroundColor Red
         $location = ""
     }
 }
 
 while ([string]::IsNullOrWhiteSpace($location)) {
-    $location = Read-Host "Please specify a valid ADT-enabled location for your solution"
+    $location = Read-Host "Please specify a valid Azure Digital Twins-enabled location for your solution"
     # check if valid location
-    $valid_location = [System.Linq.Enumerable]::FirstOrDefault($valid_locations, [Func[object, bool]] { param($x) $location -eq $x.name -or $location -like $valid_locations.displayName})
+    $valid_location = $valid_locations | Where-Object -FilterScript { $location -eq $_.name -or $location -like $_.displayName}
     if($valid_location) {
         $location = $valid_location.name
     } else {
+        Write-Host "Location '$location' is not an Azure Digital Twins enabled location. Clearing input." -ForegroundColor Red
         $location = ""
     }
     # check if we set location
     if ([string]::IsNullOrWhiteSpace($location)) {
-        Write-Host "Invalid value specified for location." -ForegroundColor Red
+        Write-Host "Valid locations include:"
+        foreach ($location_item in $valid_locations) {
+            Write-Host $location_item.name -ForegroundColor Blue
+        }
     }
 }
 
@@ -400,7 +408,7 @@ if ($endToEnd) {
         $azresult = (az dt route create --dtn $name --endpoint-name $endpoint_name --route-name $route_name -o json --only-show-errors) | ConvertFrom-Json
 
         if($? -and !$azresult) {
-            throw "Unable to create route"
+            throw "Unable to create route. This is typically due to a failure to assign permissions using 'az dt role-assignment' and requires granting your user Azure Digital Twins Owner role to the Digital Twins resource using Azure Portal instead"
         }
     }
     $config | ConvertTo-Json -Depth 100 | Out-File $configFile
@@ -536,7 +544,7 @@ if ($endToEnd) {
 
     $eventgrid_id = (az eventgrid topic show -g $resource_group -n $topic_name --only-show-errors --query id -o json 2>$null) | ConvertFrom-Json
     Write-Host "Checking for existing processing event subscription: " -ForegroundColor DarkGray -NoNewline
-    Write-Host "'az eventgrid event-subscription list --source-resource-id $dt_id" -ForegroundColor Yellow
+    Write-Host "'az eventgrid event-subscription list --source-resource-id $eventgrid_id" -ForegroundColor Yellow
     $azresult = (az eventgrid event-subscription list --source-resource-id $eventgrid_id --only-show-errors -o json) | ConvertFrom-Json
     if(!$azresult -or ![System.Linq.Enumerable]::FirstOrDefault($azresult, [Func[object, bool]] { param($x) $processing_function -eq $x.name})) {
 
