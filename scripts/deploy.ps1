@@ -106,16 +106,16 @@ if (Get-Member -InputObject $config -Name "subscription" -MemberType Properties)
 while ([string]::IsNullOrEmpty($subscription)) {
     $subscription = Read-Host "Please specify your Azure subscription id"
 }
-$config.subscription = $subscription
-
 Write-Host "Setting active subscription: " -ForegroundColor DarkGray -NoNewline
 Write-Host "'az account set -s $subscription'" -ForegroundColor Yellow
 $azresult = (az account set -s $subscription) | ConvertFrom-Json
-# az account set has no output so we have to double check
-$azresult = (az account show --query id -o json --only-show-errors 2>$null) | ConvertFrom-Json
-if($azresult) {
-    $subscription = $azresult
-    $config.subscription = $azresult
+
+$azresult = (az account show --query '[id, name]' -o json --only-show-errors) | ConvertFrom-Json
+
+if($azresult -and ($azresult[0] -eq $subscription -or $azresult[1] -eq $subscription)) {
+    $subscription = $azresult[0]
+    # $config.subscription = $azresult
+    Write-Host "Subscription set to '$subscription'" -ForegroundColor DarkGray
 } else {
     throw "Unable to set subscription"
 }
