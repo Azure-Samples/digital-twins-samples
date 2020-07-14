@@ -40,7 +40,7 @@ function Write-ManifestFile {
             type = "Scope"
         }
     }
-    $manifest | ConvertTo-Json -Depth 100 | Out-File ".\manifest.json"
+    $manifest | ConvertTo-Json -Depth 100 | Out-File "manifest.json"
 }
 
 $env:AZURE_CORE_NO_COLOR='True'
@@ -48,10 +48,11 @@ $cooloff = 20
 $fileCooloff = 2
 
 #read config
-$configFile = ".\config.json"
+$configFile = "config.json"
 $config = "{}" | ConvertFrom-Json
 if([System.IO.File]::Exists($configFile)) {
     $config = Get-Content $configFile | ConvertFrom-Json
+    # Write-Host "Configuration read from JSON: $config" -ForegroundColor DarkGray
 }
 
 Write-Host "Checking for legacy azure-cli-iot-ext..." -ForegroundColor DarkGray
@@ -114,7 +115,7 @@ $azresult = (az account show --query '[id, name]' -o json --only-show-errors) | 
 
 if($azresult -and ($azresult[0] -eq $subscription -or $azresult[1] -eq $subscription)) {
     $subscription = $azresult[0]
-    # $config.subscription = $azresult
+    $config.subscription = $subscription
     Write-Host "Subscription set to '$subscription'" -ForegroundColor DarkGray
 } else {
     throw "Unable to set subscription"
@@ -148,11 +149,13 @@ if (Get-Member -InputObject $config -Name "location" -MemberType Properties) {
     $config | Add-Member -Name "location" -Value "" -MemberType NoteProperty
 }
 # get locations (Display Names) where Azure Digital Twins is enabled
-$twin_locations = ((az provider show -n Microsoft.DigitalTwins --query "resourceTypes[?resourceType=='digitalTwinsInstances'].locations" -o json) | ConvertFrom-Json)[0]
+$twin_locations = ((az provider show -n Microsoft.DigitalTwins --query "resourceTypes[?resourceType=='digitalTwinsInstances'].locations" -o json) | ConvertFrom-Json)
 # get all locations available in subscription and filter to values with display name in twin locations. This allows for westus2 instead of escaping "West US 2" throughout the script
-$valid_locations = (az account list-locations -o json | ConvertFrom-Json) | Where-Object -FilterScript { [System.Linq.Enumerable]::FirstOrDefault($twin_locations, [Func[object, bool]] {param($y) $y -eq $_.displayName}) }
+$account_locations = (az account list-locations -o json | ConvertFrom-Json)
+
+$valid_locations = [System.Linq.Enumerable]::ToList([System.Linq.Enumerable]::Where($account_locations, [Func[object, bool]] {param($x) ([System.Linq.Enumerable]::Any($twin_locations, [Func[object, bool]] {param($y) $y -eq $x.displayName}))}))
 if(![string]::IsNullOrWhiteSpace($location)) {
-    $valid_location = $valid_locations | Where-Object -FilterScript { $location -eq $_.name -or $location -like $_.displayName}
+    $valid_location = [System.Linq.Enumerable]::FirstOrDefault($valid_locations, [Func[object, bool]] { param($x) $x.name -eq $location -or $x.displayName -like $location})
     if($valid_location) {
         $location = $valid_location.name
     } else {
@@ -164,7 +167,7 @@ if(![string]::IsNullOrWhiteSpace($location)) {
 while ([string]::IsNullOrWhiteSpace($location)) {
     $location = Read-Host "Please specify a valid Azure Digital Twins-enabled location for your solution"
     # check if valid location
-    $valid_location = $valid_locations | Where-Object -FilterScript { $location -eq $_.name -or $location -like $_.displayName}
+    $valid_location = [System.Linq.Enumerable]::FirstOrDefault($valid_locations, [Func[object, bool]] { param($x) $x.name -eq $location -or $x.displayName -like $location})
     if($valid_location) {
         $location = $valid_location.name
     } else {
@@ -408,7 +411,12 @@ if ($endToEnd) {
         $azresult = (az dt route create --dtn $name --endpoint-name $endpoint_name --route-name $route_name -o json --only-show-errors) | ConvertFrom-Json
 
         if($? -and !$azresult) {
-            throw "Unable to create route. This is typically due to a failure to assign permissions using 'az dt role-assignment' and requires granting your user Azure Digital Twins Owner role to the Digital Twins resource using Azure Portal instead"
+            Write-Host "Unable to create route." -ForegroundColor Red
+            Write-Host "Possible causes are using CloudShell or a failure to assign permissions using 'az dt role-assignment' and requires granting your user Azure Digital Twins Owner role to the Digital Twins resource using Azure Portal instead"
+            $continue = Read-Host "Do you wish to continue script execution and create route manually (y/n)?"
+            if($continue -ne "y") {
+                throw "Terminating script"
+            }
         }
     }
     $config | ConvertTo-Json -Depth 100 | Out-File $configFile
@@ -525,16 +533,16 @@ if ($endToEnd) {
         $ingress_endpoint = "https://$function_host/runtime/webhooks/EventGrid?functionName=$ingress_function" + "&" + "code=$function_code"
         $ingress_subscription_url = "$iot_hub_id/providers/Microsoft.EventGrid/eventSubscriptions/$ingress_function"
         $body = "{""name"": ""$ingress_function"",""properties"": {""topic"": ""$iot_hub_id"",""destination"": {""endpointType"": ""WebHook"",""properties"": {""endpointUrl"": ""$ingress_endpoint"",""maxEventsPerBatch"": 1,""preferredBatchSizeInKilobytes"": 64}},""filter"": {""includedEventTypes"": [""Microsoft.Devices.DeviceTelemetry""]},""eventDeliverySchema"": ""EventGridSchema""}}" | ConvertTo-Json
-        $body | ConvertFrom-Json | Out-File ".\ingressbody.json"
+        $body | ConvertFrom-Json | Out-File "ingressbody.json"
 
         $parameters = "{""api-version"": ""2020-04-01-preview""}"
-        $parameters | Out-File ".\ingressparameters.json"
+        $parameters | Out-File "ingressparameters.json"
 
         Write-Host "Creating ingress Event Grid subscription: " -ForegroundColor DarkGray -NoNewline
-        Write-Host "'az rest --method put --uri $ingress_subscription_url -b ""@.\ingressbody.json"" --uri-parameters ""@.\ingressparameters.json""'" -ForegroundColor Yellow
+        Write-Host "'az rest --method put --uri $ingress_subscription_url -b ""@ingressbody.json"" --uri-parameters ""@ingressparameters.json""'" -ForegroundColor Yellow
         Start-Sleep -Seconds $fileCooloff
 
-        $azresult = (az rest --method put --uri $ingress_subscription_url -b "@.\ingressbody.json" --uri-parameters "@.\ingressparameters.json" -o json) | ConvertFrom-Json
+        $azresult = (az rest --method put --uri $ingress_subscription_url -b "@ingressbody.json" --uri-parameters "@ingressparameters.json" -o json) | ConvertFrom-Json
         if(!$azresult) {
             throw "Unable to create Event Grid ingress subscription"
         } else {
@@ -551,18 +559,18 @@ if ($endToEnd) {
         $function_id = (az functionapp show -g $resource_group -n $function_app --only-show-errors --query id -o json 2>$null) | ConvertFrom-Json
         $full_function_id = "$function_id/functions/$processing_function"
         $body = "{""name"": ""$processing_function"",""properties"": {""topic"": ""$eventgrid_id"",""destination"": {""endpointType"": ""AzureFunction"",""properties"": {""resourceId"": ""$full_function_id"",""maxEventsPerBatch"": 1,""preferredBatchSizeInKilobytes"": 64}},""eventDeliverySchema"": ""EventGridSchema""}}" | ConvertTo-Json
-        $body | ConvertFrom-Json | Out-File ".\proccessingbody.json"
+        $body | ConvertFrom-Json | Out-File "proccessingbody.json"
 
         $parameters = "{""api-version"": ""2020-04-01-preview""}"
-        $parameters | Out-File ".\processingparameters.json"
+        $parameters | Out-File "processingparameters.json"
 
         $eventgrid_subscription_url = "$eventgrid_id/providers/Microsoft.EventGrid/eventSubscriptions/$processing_function"
 
         Write-Host "Creating processsing Event Grid subscription: " -ForegroundColor DarkGray -NoNewline
-        Write-Host "'az rest --method put --uri ""$eventgrid_subscription_url"" -b ""@.\proccessingbody.json"" --uri-parameters ""@.\processingparameters.json""'" -ForegroundColor Yellow
+        Write-Host "'az rest --method put --uri ""$eventgrid_subscription_url"" -b ""@proccessingbody.json"" --uri-parameters ""@processingparameters.json""'" -ForegroundColor Yellow
         Start-Sleep -Seconds $fileCooloff
 
-        $azresult = (az rest --method put --uri "$eventgrid_subscription_url" -b "@.\proccessingbody.json" --uri-parameters "@.\processingparameters.json" -o json) | ConvertFrom-Json
+        $azresult = (az rest --method put --uri "$eventgrid_subscription_url" -b "@proccessingbody.json" --uri-parameters "@processingparameters.json" -o json) | ConvertFrom-Json
         if(!$azresult) {
             throw "Unable to create Event Grid processing subscription"
         } else {
