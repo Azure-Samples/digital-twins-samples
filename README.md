@@ -22,16 +22,6 @@ This project contains 2 samples for working with Azure Digital Twins:
 * A **building scenario** sample written in .NET. Can be used to set up and simulate a full end-to-end scenario with Azure Digital Twins
 * A **deployment script** written in PowerShell. Can be used to deploy and set [AAD](https://docs.microsoft.com/azure/active-directory/fundamentals/active-directory-whatis) permissions for an Azure Digital Twins instance
 
-## Prerequisites
-
-#### For the building scenario:
-
-These samples were developed and expected to run in Visual Studio 2019. Ensure you have installed Visual Studio 2019 version **16.5.1XXX or later** on your development machine. If you have an older version installed already, you can open the Visual Studio Installer app on your machine and follow the prompts to update your installation.
-
-#### For the deployment script:
-
-None
-
 ## Setup
 
 Get the samples by downloading this repository as a ZIP file to your machine.
@@ -44,6 +34,14 @@ The sample repo contains:
 | `AdtSampleApp` | For the building scenario. Contains a sample client application built to interact with Azure Digital Twins, as well as an Azure Functions app with two functions (*ProcessDTRoutedData* and *ProcessHubToDTEvents*) that are used to route data between Azure Digital Twins and other external services. |
 | `DeviceSimulator` | For the building scenario. Simulator for a that generates telemetry events. The simulated device is a thermostat that sends temperature telemetry every ~5 seconds. |
 | `scripts` | For the deployment script. Contains *deploy.ps1*.
+
+## Prerequisites
+
+#### For the building scenario:
+These samples were developed and expected to run in Visual Studio 2019. Ensure you have installed Visual Studio 2019 version **16.5.1XXX or later** on your development machine. If you have an older version installed already, you can open the Visual Studio Installer app on your machine and follow the prompts to update your installation.
+
+#### For the deployment script:
+None
 
 ## Instructions
 
