@@ -9,7 +9,7 @@ description: These are code samples for working with Azure Digital Twins.
 urlFragment: digital-twins-samples
 ---
 
-# Samples for Azure Digital Twins documentation
+# Samples for Azure Digital Twins
 
 Azure Digital Twins is a developer platform for next-generation IoT solutions that lets you create, run, and manage digital representations of your business environment, securely and efficiently in the cloud. With Azure Digital Twins, creating live operational state representations is quick and cost-effective, and digital representations stay current with real-time data from IoT and other data sources.
 
