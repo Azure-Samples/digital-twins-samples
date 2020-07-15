@@ -6,38 +6,39 @@ namespace DeviceSimulator
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
-            //Sample 1: Create device if you didn't have one in Azure IoT Hub, FIRST YOU NEED SPECIFY connectionString first in AzureIoTHub.cs
-            // CreateDeviceIdentity();
+            // Sample 1: Create device if you didn't have one in Azure IoT Hub, FIRST YOU NEED SPECIFY connectionString first in AzureIoTHub.cs
+            //await CreateDeviceIdentity();
 
-            //Sample 2: comment above line and uncomment following line, FIRST YOU NEED SPECIFY connectingString and deviceConnectionString in AzureIoTHub.cs
-            SimulateDeviceToSendD2CAndReceiveD2C();
+            // Sample 2: comment above line and uncomment following line, FIRST YOU NEED SPECIFY connectingString and deviceConnectionString in AzureIoTHub.cs
+            await SimulateDeviceToSendD2cAndReceiveD2c();
         }
 
-        public static void CreateDeviceIdentity()
+        public static async Task CreateDeviceIdentity()
         {
             string deviceName = "thermostat67";
-            AzureIoTHub.CreateDeviceIdentityAsync(deviceName).Wait();
+            await AzureIoTHub.CreateDeviceIdentityAsync(deviceName);
             Console.WriteLine($"Device with name '{deviceName}' was created/retrieved successfully");
         }
 
-        private static void SimulateDeviceToSendD2CAndReceiveD2C()
+        private static async Task SimulateDeviceToSendD2cAndReceiveD2c()
         {
-            CancellationTokenSource tokenSource = new CancellationTokenSource();
+            var tokenSource = new CancellationTokenSource();
 
             Console.CancelKeyPress += (s, e) =>
             {
                 e.Cancel = true;
                 tokenSource.Cancel();
-                Console.WriteLine("Exiting ...");
+                Console.WriteLine("Exiting...");
             };
             Console.WriteLine("Press CTRL+C to exit");
 
-            Task.WaitAll(
+            await Task.WhenAll(
                 AzureIoTHub.SendDeviceToCloudMessageAsync(tokenSource.Token),
-                AzureIoTHub.ReceiveMessagesFromDeviceAsync(tokenSource.Token)
-                );
+                AzureIoTHub.ReceiveMessagesFromDeviceAsync(tokenSource.Token));
+
+            tokenSource.Dispose();
         }
     }
 }

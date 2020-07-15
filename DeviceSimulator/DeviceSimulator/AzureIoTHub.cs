@@ -1,13 +1,12 @@
+using Azure.Messaging.EventHubs.Consumer;
+using Microsoft.Azure.Devices;
 using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Common.Exceptions;
-using Microsoft.ServiceBus.Messaging;
-using Newtonsoft.Json;
 using System;
-using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Devices = Microsoft.Azure.Devices;
 
 namespace DeviceSimulator
 {
@@ -17,7 +16,7 @@ namespace DeviceSimulator
         /// Please replace with correct connection string value
         /// The connection string could be got from Azure IoT Hub -> Shared access policies -> iothubowner -> Connection String:
         /// </summary>
-        private const string connectionString = "<your-hub-connection-string>";
+        private const string iotHubConnectionString = "<your-hub-connection-string>=";
 
         /// <summary>
         /// Please replace with correct device connection string
@@ -25,21 +24,19 @@ namespace DeviceSimulator
         /// </summary>
         private const string deviceConnectionString = "<your-device-connection-string>";
 
-
-        private const string iotHubD2cEndpoint = "messages/events";
-
         public static async Task<string> CreateDeviceIdentityAsync(string deviceName)
         {
-            var registryManager = Devices.RegistryManager.CreateFromConnectionString(connectionString);
-            Devices.Device device;
+            var registryManager = RegistryManager.CreateFromConnectionString(iotHubConnectionString);
+            var device = new Device(deviceName);
             try
             {
-                device = await registryManager.AddDeviceAsync(new Devices.Device(deviceName));
+                device = await registryManager.AddDeviceAsync(device);
             }
             catch (DeviceAlreadyExistsException)
             {
                 device = await registryManager.GetDeviceAsync(deviceName);
             }
+
             return device.Authentication.SymmetricKey.PrimaryKey;
         }
 
@@ -47,68 +44,66 @@ namespace DeviceSimulator
         {
             var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString);
 
-            double avgTemperature = 70; // m/s
-            Random rand = new Random();
+            double avgTemperature = 70.0D;
+            var rand = new Random();
 
-            while (true)
+            while (!cancelToken.IsCancellationRequested)
             {
-                if (cancelToken.IsCancellationRequested)
-                    break;
-
                 double currentTemperature = avgTemperature + rand.NextDouble() * 4 - 3;
 
                 var telemetryDataPoint = new
                 {
                     Temperature = currentTemperature
                 };
-                var messageString = JsonConvert.SerializeObject(telemetryDataPoint);
-                var message = new Message(Encoding.ASCII.GetBytes(messageString));
+                var messageString = JsonSerializer.Serialize(telemetryDataPoint);
+                var message = new Microsoft.Azure.Devices.Client.Message(Encoding.ASCII.GetBytes(messageString));
                 await deviceClient.SendEventAsync(message);
-                Console.WriteLine("{0} > Sending message: {1}", DateTime.Now, messageString);
+                Console.WriteLine($"{DateTime.Now} > Sending message: {messageString}");
                 await Task.Delay(5000);
             }
         }
 
         public static async Task<string> ReceiveCloudToDeviceMessageAsync()
         {
+            var oneSecond = TimeSpan.FromSeconds(1);
             var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString);
 
             while (true)
             {
                 var receivedMessage = await deviceClient.ReceiveAsync();
-
-                if (receivedMessage != null)
+                if (receivedMessage == null)
                 {
-                    var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
-                    await deviceClient.CompleteAsync(receivedMessage);
-                    return messageData;
+                    await Task.Delay(oneSecond);
+                    continue;
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
+                await deviceClient.CompleteAsync(receivedMessage);
+                return messageData;
             }
         }
 
         public static async Task ReceiveMessagesFromDeviceAsync(CancellationToken cancelToken)
         {
-            EventHubClient eventHubClient = EventHubClient.CreateFromConnectionString(connectionString, iotHubD2cEndpoint);
-            var d2cPartitions = eventHubClient.GetRuntimeInformation().PartitionIds;
-
-            await Task.WhenAll(d2cPartitions.Select(partition => ReceiveMessagesFromDeviceAsync(eventHubClient, partition, cancelToken)));
-        }
-
-        private static async Task ReceiveMessagesFromDeviceAsync(EventHubClient eventHubClient, string partition, CancellationToken ct)
-        {
-            var eventHubReceiver = eventHubClient.GetDefaultConsumerGroup().CreateReceiver(partition, DateTime.UtcNow);
-            while (true)
+            try
             {
-                if (ct.IsCancellationRequested)
-                    break;
+                string eventHubConnectionString = await IotHubConnection.GetEventHubsConnectionStringAsync(iotHubConnectionString);
+                await using var consumerClient = new EventHubConsumerClient(
+                    EventHubConsumerClient.DefaultConsumerGroupName,
+                    eventHubConnectionString);
 
-                EventData eventData = await eventHubReceiver.ReceiveAsync(TimeSpan.FromSeconds(2));
-                if (eventData == null) continue;
+                await foreach (PartitionEvent partitionEvent in consumerClient.ReadEventsAsync(cancelToken))
+                {
+                    if (partitionEvent.Data == null) continue;
 
-                string data = Encoding.UTF8.GetString(eventData.GetBytes());
-                Console.WriteLine("Message received. Partition: {0} Data: '{1}'", partition, data);
+                    string data = Encoding.UTF8.GetString(partitionEvent.Data.Body.ToArray());
+                    Console.WriteLine($"Message received. Partition: {partitionEvent.Partition.PartitionId} Data: '{data}'");
+                }
+            }
+            catch (TaskCanceledException) { } // do nothing
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading event: {ex}");
             }
         }
     }

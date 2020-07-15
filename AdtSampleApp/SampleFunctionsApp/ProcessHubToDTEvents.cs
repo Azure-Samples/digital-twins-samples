@@ -1,56 +1,44 @@
 // Default URL for triggering event grid function in the local environment.
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
 
+using Azure.Core.Pipeline;
+using Azure.DigitalTwins.Core;
+using Azure.Identity;
 using Microsoft.Azure.EventGrid.Models;
-using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
-using Microsoft.Rest;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
-using System.Linq;
-
-using Azure;
-using Azure.Identity;
-
-using Azure.DigitalTwins.Core;
 using System.Net.Http;
-using Azure.Core.Pipeline;
+using System.Text;
 
 namespace SampleFunctionsApp
 {
-    /*
-     * This class processes telemetry events from IoT Hub, reads temperature of a device, 
-     * sets the "Temperature" property of the device with the value of the telemetry,
-     * Finds the room that contains the device and sets the room Temperature property
-     * to the latest telemetry value.
-     */
+    // This class processes telemetry events from IoT Hub, reads temperature of a device,
+    // sets the "Temperature" property of the device with the value of the telemetry,
+    // Finds the room that contains the device and sets the room Temperature property
+    // to the latest telemetry value.
     public class ProcessHubToDTEvents
     {
         const string adtAppId = "https://digitaltwins.azure.net";
-        private static string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
-        private static HttpClient httpClient = new HttpClient();
+        private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
+        private static readonly HttpClient httpClient = new HttpClient();
 
         [FunctionName("ProcessHubToDTEvents")]
         public async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
         {
-            // After this is deployed, you need to turn the Managed Identity Status to "On", 
+            // After this is deployed, you need to turn the Managed Identity Status to "On",
             // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role to this function identity
             // in order for this function to be authorized on ADT APIs.
 
             log.LogInformation(eventGridEvent.Data.ToString());
-            DigitalTwinsClient client = null;
-            
             try
             {
                 // Authenticate on ADT APIs
-                ManagedIdentityCredential cred = new ManagedIdentityCredential(adtAppId);
-                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
+                var cred = new ManagedIdentityCredential(adtAppId);
+                var client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation($"ADT service client connection created.");
 
                 if (client != null)
@@ -80,14 +68,14 @@ namespace SampleFunctionsApp
                         log.LogInformation($"Found device: {deviceId}");
 
                         // Extracting temperature from device telemetry
-                        byte[] body = System.Convert.FromBase64String(job["body"].ToString());
-                        var value = System.Text.ASCIIEncoding.ASCII.GetString(body);
+                        byte[] body = Convert.FromBase64String(job["body"].ToString());
+                        var value = Encoding.ASCII.GetString(body);
                         var bodyProperty = (JObject)JsonConvert.DeserializeObject(value);
                         var temperature = bodyProperty["Temperature"];
                         log.LogInformation($"Device Temperature is:{temperature}");
 
                         // Update device Temperature property
-                        await AdtUtilities.UpdateTwinProperty(client, deviceId, "/Temperature", temperature, log);
+                        await AdtUtilities.UpdateTwinPropertyAsync(client, deviceId, "/Temperature", temperature, log);
 
                     }
                 }
@@ -97,6 +85,5 @@ namespace SampleFunctionsApp
                 log.LogError($"Error: {e.Message}");
             }
         }
-
     }
 }
