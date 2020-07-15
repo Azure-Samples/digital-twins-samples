@@ -2,6 +2,7 @@
 page_type: sample
 languages:
 - csharp
+- powershell
 products:
 - azure-digital-twins
 name: Azure Digital Twins samples
@@ -17,36 +18,44 @@ For more information about Azure Digital Twins and its key concepts, see the [Az
 
 ## Purpose
 
-This is a building scenario sample written in .NET that can be used to set up and simulate a full end-to-end scenario with Azure Digital Twins.
+This project contains 2 samples for working with Azure Digital Twins:
+* A **building scenario** sample written in .NET. Can be used to set up and simulate a full end-to-end scenario with Azure Digital Twins
+* A **deployment script** written in PowerShell. Can be used to deploy and set [AAD](https://docs.microsoft.com/azure/active-directory/fundamentals/active-directory-whatis) permissions for an Azure Digital Twins instance
 
 ## Prerequisites
 
+#### For the building scenario:
+
 These samples were developed and expected to run in Visual Studio 2019. Ensure you have installed Visual Studio 2019 version **16.5.1XXX or later** on your development machine. If you have an older version installed already, you can open the Visual Studio Installer app on your machine and follow the prompts to update your installation.
+
+#### For the deployment script:
+
+None
 
 ## Setup
 
-Get the sample project you'll use by downloading this repository as a ZIP file to your machine.
+Get the samples by downloading this repository as a ZIP file to your machine.
 
 ## Sample project contents
-
-This sample contains two code projects that can be used to set up and simulate a full end-to-end scenario that makes use of Azure Digital Twins.
-
-The scenario components and data flow reflect this diagram:
-
-![Graphic of the full building scenario. Depicts data flowing from a device into IoT Hub, through an Azure function (arrow B) to an Azure Digital Twins instance (section A), then out through Event Grid to another Azure function for processing (arrow C)](media/building-scenario.png)
-
 The sample repo contains:
 
 | File/folder | Description |
 | --- | --- |
-| `AdtSampleApp` | Contains a sample client application built to interact with Azure Digital Twins, as well as an Azure Functions app with two functions (*ProcessDTRoutedData* and *ProcessHubToDTEvents*) that are used to route data between Azure Digital Twins and other external services. |
-| `DeviceSimulator` | Simulator for a that generates telemetry events. The simulated device is a thermostat that sends temperature telemetry every ~5 seconds. |
+| `AdtSampleApp` | For the building scenario. Contains a sample client application built to interact with Azure Digital Twins, as well as an Azure Functions app with two functions (*ProcessDTRoutedData* and *ProcessHubToDTEvents*) that are used to route data between Azure Digital Twins and other external services. |
+| `DeviceSimulator` | For the building scenario. Simulator for a that generates telemetry events. The simulated device is a thermostat that sends temperature telemetry every ~5 seconds. |
+| `scripts` | For the deployment script. Contains *deploy.ps1*.
 
 ## Instructions
 
-There are two possible sets of instructions for working with this sample. Both are part of the [Azure Digital Twins documentation](https://docs.microsoft.com/azure/digital-twins/).
-* [Tutorial: Explore the basics with a sample client app](https://docs.microsoft.com/azure/digital-twins/tutorial-command-line-app)
-* [Tutorial: Connect an end-to-end solution](https://docs.microsoft.com/azure/digital-twins/tutorial-end-to-end)
+The instructions for working with these samples are included in the [Azure Digital Twins documentation](https://docs.microsoft.com/azure/digital-twins/).
+
+#### Building scenario:
+There are two possible sets of instructions for working with this sample.
+* [*Tutorial: Explore the basics with a sample client app*](https://docs.microsoft.com/azure/digital-twins/tutorial-command-line-app)
+* [*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-end-to-end)
+
+#### Deployment script:
+Instructions for running the script, and manual description of the automated steps within the script, are found in [*How-to: Create an Azure Digital Twins instance*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance).
 
 ## Contributing
 
