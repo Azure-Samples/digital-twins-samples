@@ -64,13 +64,10 @@ namespace SampleClientApp
                 var credential = new InteractiveBrowserCredential(tenantId, clientId);
                 client = new DigitalTwinsClient(new Uri(adtInstanceUrl), credential);
                 // force authentication to happen here
+                // ignoring the RequestFailedException to allow authentication    
                 try
-                {
-                    client.GetDigitalTwin("---");
-                }
-                catch (RequestFailedException rex)
-                {
-
+                {                                    
+                    Utilities.IgnoreRequestFailedException(() => client.GetDigitalTwin(""));
                 }
                 catch (Exception e)
                 {
