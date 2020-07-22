@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SampleClientApp
 {
@@ -10,7 +8,7 @@ namespace SampleClientApp
         {
             Console.ForegroundColor = col;
             Console.WriteLine(s);
-            Console.ForegroundColor = ConsoleColor.White;
+            Console.ResetColor();
         }
 
         static public void Error(string s)

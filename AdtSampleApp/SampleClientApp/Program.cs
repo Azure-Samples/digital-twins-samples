@@ -1,19 +1,10 @@
-﻿using Microsoft.Identity.Client;
-using Azure.Identity;
-using Microsoft.Rest;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
-
+﻿using Azure;
 using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
-using Azure.DigitalTwins.Core.Models;
+using Azure.Identity;
+using Microsoft.Extensions.Configuration;
+using System;
 using System.Runtime.InteropServices;
-using Azure;
+using System.Threading.Tasks;
 
 namespace SampleClientApp
 {
@@ -26,11 +17,7 @@ namespace SampleClientApp
         private static string tenantId;
         private static string adtInstanceUrl;
 
-        const string adtAppId = "https://digitaltwins.azure.net";
-        
         private static DigitalTwinsClient client;
-
-        static string[] scopes = new[] { adtAppId + "/.default" };
 
         static async Task Main()
         {
@@ -40,6 +27,7 @@ namespace SampleClientApp
                 int height = Math.Min(Console.LargestWindowHeight, 40);
                 Console.SetWindowSize(width, height);
             }
+
             try
             {
                 // Read configuration data from the 
@@ -49,7 +37,8 @@ namespace SampleClientApp
                 clientId = config["clientId"];
                 tenantId = config["tenantId"];
                 adtInstanceUrl = config["instanceUrl"];
-            } catch (Exception e)
+            }
+            catch (Exception)
             {
                 Log.Error($"Could not read service configuration file serviceConfig.json");
                 Log.Alert($"Please copy serviceConfig.json.TEMPLATE to serviceConfig.json");
@@ -68,9 +57,10 @@ namespace SampleClientApp
                 {
                     client.GetDigitalTwin("---");
                 }
-                catch (RequestFailedException rex)
+                catch (RequestFailedException)
                 {
-
+                    // As we are intentionally try to retrieve a twin that is most likely not going to exist, this exception is expected
+                    // We just do this to force the authentication library to authenticate ahead
                 }
                 catch (Exception e)
                 {
@@ -78,18 +68,18 @@ namespace SampleClientApp
                     Log.Alert($"Have you checked that the configuration in serviceConfig.json is correct?");
                     Environment.Exit(0);
                 }
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Log.Error($"Authentication or client creation error: {e.Message}");
                 Log.Alert($"Have you checked that the configuration in serviceConfig.json is correct?");
                 Environment.Exit(0);
             }
-            
+
             Log.Ok($"Service client created – ready to go");
 
-            CommandLoop CommandLoopInst = new CommandLoop(client);
+            var CommandLoopInst = new CommandLoop(client);
             await CommandLoopInst.CliCommandInterpreter();
         }
-
     }
 }
