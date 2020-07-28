@@ -70,20 +70,11 @@ namespace SampleFunctionsApp
                                 if (opValue.Equals("replace"))
                                 {
                                     string propertyPath = ((string)operation["path"]);
-                                    string propertyValue = (string)operation["value"];
+                                    object propertyValue = (object)operation["value"];
 
                                     if (propertyPath.Equals("/Temperature"))
                                     {
-                                        try
-                                        {
-                                            var uou = new UpdateOperationsUtility();
-                                            uou.AppendReplaceOp(propertyPath, propertyValue);
-                                            await client.UpdateDigitalTwinAsync(parentId, uou.Serialize());
-                                        }
-                                        catch (RequestFailedException ex)
-                                        {
-                                            log.LogError($"*** Error: {ex.Status}/{ex.Message}");
-                                        }
+                                        await AdtUtilities.UpdateTwinPropertyAsync(client, parentId, propertyPath, propertyValue, log);
                                     }
                                 }
                             }
