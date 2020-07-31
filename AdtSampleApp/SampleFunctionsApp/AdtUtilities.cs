@@ -4,7 +4,6 @@ using Azure.DigitalTwins.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SampleFunctionsApp
@@ -62,15 +61,12 @@ namespace SampleFunctionsApp
             // If the twin does not exist, this will log an error
             try
             {
-                // Update twin property
-                List<Dictionary<string, object>> ops = new List<Dictionary<string, object>>();
-                ops.Add(new Dictionary<string, object>()
-                {
-                    { "op", "replace"},
-                    { "path", propertyPath},
-                    { "value", value}
-                });
-                await client.UpdateDigitalTwinAsync(twinId, JsonConvert.SerializeObject(ops));
+                var uou = new UpdateOperationsUtility();
+                uou.AppendReplaceOp(propertyPath, value);
+                string patchPayload = uou.Serialize();
+                log.LogInformation($"UpdateTwinPropertyAsync sending {patchPayload}");
+
+                await client.UpdateDigitalTwinAsync(twinId, patchPayload);
             }
             catch (RequestFailedException exc)
             {
