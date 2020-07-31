@@ -71,12 +71,11 @@ namespace SampleFunctionsApp
                         byte[] body = Convert.FromBase64String(job["body"].ToString());
                         var value = Encoding.ASCII.GetString(body);
                         var bodyProperty = (JObject)JsonConvert.DeserializeObject(value);
-                        var temperature = bodyProperty["Temperature"];
-                        log.LogInformation($"Device Temperature is:{temperature}");
+                        JToken temperature = bodyProperty["Temperature"];
+                        log.LogInformation($"Device Temperature is ({temperature.Type}): {temperature}");
 
                         // Update device Temperature property
-                        await AdtUtilities.UpdateTwinPropertyAsync(client, deviceId, "/Temperature", temperature, log);
-
+                        await AdtUtilities.UpdateTwinPropertyAsync(client, deviceId, "/Temperature", temperature.Value<float>(), log);
                     }
                 }
             }
