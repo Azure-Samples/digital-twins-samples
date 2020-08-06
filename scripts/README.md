@@ -16,6 +16,7 @@ Deploy.ps1 is an Azure Digital Twins code sample used to deploy an Azure Digital
 * You'll need Azure subscription. You can set one up for free [here](https://azure.microsoft.com/free/?WT.mc_id=A261C142F).
 * You'll need a resource group in your Azure subscription. You can create your resource group using [this](https://docs.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-cli) article.
 * Download [Azure Digital Twins samples](https://docs.microsoft.com/samples/azure-samples/digital-twins-samples/digital-twins-samples/) to your machine. In the downloaded sample folder, the deployment script is located at _Azure_Digital_Twins_samples.zip > scripts > **deploy.ps1**_.
+* These operations are intended to be completed by a user with an *Owner* role on the Azure subscription. Although some pieces can be completed without this elevated permission, an owner's cooperation will be required to completely set up a usable instance. View more information on this in the [*Prerequisites: Required permissions*](#prerequisites-permission-requirements) section below.
 
 ## Setup
 
@@ -26,6 +27,8 @@ az login
 ```
 
 2. Upload the *deploy.ps1* file that you have downloaded earlier from your machine to the Azure cloud shell by selecting *Upload/Download* icon in the navigation bar.
+
+:::image type="content" source="media/scripts/cloud-shell-upload-file.png" alt-text="Screenshot of uploading a file to Azure cloud shell":::
 
 ## Running the sample
 
@@ -38,9 +41,9 @@ deploy.ps1 script can be run in two modes.
     * Sets access permissions for client applications
 * *.\deploy.ps1 -endtoend*
     This mode of the script:
-    * Creates digital twin endpoints
-    * Creates twin routes
-
+    * Sets up an Azure Digital Twins instance
+    * Uses an [Azure Functions](../azure-functions/functions-overview.md) app to route simulated telemetry from an [IoT Hub](../iot-hub/about-iot-hub.md) device into digital twin properties
+    
 > [!NOTE]
 > In Azure cloud shell window, make sure *select environment* dropdown in the navigation bar is set to *Powershell*
 
