@@ -50,14 +50,27 @@ az login
 The deploy.ps1 script can be run in two modes.
 
 * *.\deploy.ps1*
+This mode of the script creates the following resources:
+    * resource group (if it doesn't exist)
+    * Azure Digital Twins instance
+    * role-assignment for the resource-group and sets the user to the role *Azure Digital Twins Owner*
+    * Azure Active Directory application registration with a display name
 * *.\deploy.ps1 -endtoend*
+This mode of the script creates the following resources:
+    * IoT hub
+    * event grid topic
+    * event grid endpoint
+    * route between endpoints of Azure Digital Twins instance
+    * storage account for Azure Functions
+    * Azure function app with a function name
+    * system-managed identity for Azure function
+    * Event Grid ingress subscription
 
 > [!NOTE]
-> When you run the script deploy.ps1, it stores the information in the config file. If you want to re-run the command for any of the following reasons, you will need to delete the config.json file and run the command again. You can do this by typing *rm config.json* file in your cloud shell.
-> * Find errors in the script or the script is aborted
-> * If you want to run the script for a different subscription
-> * If you want to create new instances for a different resource group
+> When you run the script deploy.ps1, it stores the information in the config file. If you experience any errors in the script, delete the config file by using the command *rm config.json* and try to run the script again. You can also run the script again if you want to create instances in a different subscription. User will be prompted for any required information not present in *config.json*.
 
 ![Screenshot of removing config file from the directory](/media/scripts/removing-config-file.png)
+
+Once your deployment is complete, you can [*Code your Azure Digital Twins API's*](https://docs.microsoft.com/azure/digital-twins/tutorial-code) using the resources created by running the scripts.
 
 For more information on using this script to set up your Azure Digital Twins instance including verification steps, see [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted) article.
