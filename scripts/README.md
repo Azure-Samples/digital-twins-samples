@@ -16,7 +16,21 @@ Deploy.ps1 is an Azure Digital Twins code sample used to deploy an Azure Digital
 * You'll need Azure subscription. You can set one up for free [here](https://azure.microsoft.com/free/?WT.mc_id=A261C142F).
 * You'll need a resource group in your Azure subscription. You can create your resource group using [this](https://docs.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-cli) article.
 * Download [Azure Digital Twins samples](https://docs.microsoft.com/samples/azure-samples/digital-twins-samples/digital-twins-samples/) to your machine. In the downloaded sample folder, the deployment script is located at _Azure_Digital_Twins_samples.zip > scripts > **deploy.ps1**_.
-* These operations are intended to be completed by a user with an *Owner* role on the Azure subscription. Although some pieces can be completed without this elevated permission, an owner's cooperation will be required to completely set up a usable instance. View more information on this in the [*Prerequisites: Required permissions*](#prerequisites-permission-requirements) section below.
+* To be able to complete all the steps in this article, you need to be classified as an Owner in your Azure subscription.
+    * You can check your permission level by running this command in Cloud Shell:
+
+```azurecli-interactive
+az role assignment list --assignee <your-Azure-email>
+```
+
+If you are an owner, the `roleDefinitionName` value in the output is *Owner*:
+
+![Screenshot of user checking role owner](/media/scripts/owner-role.png)
+
+If you find that the value is *Contributor* or something other than *Owner*, you can proceed in one of the following ways:
+
+* Contact your subscription Owner and request the Owner to complete the steps in this article on your behalf.
+* Contact either your subscription Owner or someone with User Access Admin role on the subscription, and request that they elevate you to Owner on the subscription so that you will have the permissions to proceed yourself. Whether this is appropriate depends on your organization and your role within it.
 
 ## Setup
 
@@ -28,7 +42,7 @@ az login
 
 2. Upload the *deploy.ps1* file that you have downloaded earlier from your machine to the Azure cloud shell by selecting *Upload/Download* icon in the navigation bar.
 
-:::image type="content" source="media/scripts/cloud-shell-upload-file.png" alt-text="Screenshot of uploading a file to Azure cloud shell":::
+![Screenshot for uploading a file to Azure cloud shell](/media/scripts/cloud-shell-upload-file.png)
 
 ## Running the sample
 
