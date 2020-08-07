@@ -71,6 +71,6 @@ This mode of the script creates the following resources:
 
 ![Screenshot of removing config file from the directory](/media/scripts/removing-config-file.png)
 
-Once your deployment is complete, you can [*Code your Azure Digital Twins API's*](https://docs.microsoft.com/azure/digital-twins/tutorial-code) using the resources created by running the scripts.
+Once your deployment is complete, you can [*Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code) using the resources created by running the scripts.
 
 For more information on using this script to set up your Azure Digital Twins instance including verification steps, see [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted) article.
