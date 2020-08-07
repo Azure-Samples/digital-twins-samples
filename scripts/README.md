@@ -100,7 +100,7 @@ Every time the script is run, it checks this config file to see what steps have 
 
 If you want to run the script from the beginning, **including situations where you want to use the script for a second deployment after a successful first deployment**, delete this config file. You can use the command *rm config.json*.
 
-![Screenshot of removing config file from the directory](/media/scripts/removing-config-file.png)
+![Screenshot of removing config file from the directory](/media/scripts/rm-config-file.png)
 
 ## Next steps
 
