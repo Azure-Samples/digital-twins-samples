@@ -5,11 +5,14 @@ languages:
 products:
 - azure
 - azure-digital-twins
-description: "How to deploy Azure Digital Twins using automated Powershell scripts"
+description: Script for deploying Azure Digital Twins and associated resources using automated Powershell script
 ---
 
-# Use Automated scripts to deploy Azure Digital Twins
-Deploy.ps1 is an Azure Digital Twins code sample used to deploy an Azure Digital Twins instance and set the required permissions. It can also be used as a starting point for writing your own scripted interactions.
+# Use automated script to deploy Azure Digital Twins
+
+*Deploy.ps1* is an Azure Digital Twins code sample that can be used to deploy an Azure Digital Twins instance, including setting up required Azure AD permissions. It can also be used to set up additional Azure resources to be used along with Azure Digital Twins in an end-to-end solution.
+
+You can use the script directly to deploy resources, or reference it as a starting point for writing your own scripted interactions.
 
 ## Prerequisites
 
@@ -30,47 +33,77 @@ If you find that the value is *Contributor* or something other than *Owner*, you
 * Contact your subscription Owner and request the Owner to run the script on your behalf.
 * Contact either your subscription Owner or someone with User Access Admin role on the subscription, and request that they elevate you to Owner on the subscription so that you will have the permissions to proceed yourself. Whether this is appropriate depends on your organization and your role within it.
 
-## Setup
-
-1. Login to [Azure Cloud Shell](https://shell.azure.com) by using the following command
-
-```azurecli
-az login
-```
-
-2. Upload the *deploy.ps1* file that you have downloaded earlier from your machine to the Azure Cloud Shell by selecting *Upload/Download* icon in the navigation bar.
-
-![Screenshot for uploading a file to Azure Cloud Shell](/media/scripts/cloud-shell-upload-file.png)
-
-> [!NOTE]
-> In the Azure Cloud Shell window, make sure *Select environment* dropdown in the navigation bar is set to *PowerShell*
-
 ## Running the sample
 
-The deploy.ps1 script can be run in two modes.
+To run the sample, start by downloading the *deploy.ps1* file to your machine.
 
-* *.\deploy.ps1*
-This mode of the script creates the following resources:
-    * resource group (if it doesn't exist)
-    * Azure Digital Twins instance
-    * role-assignment for the resource-group and sets the user to the role *Azure Digital Twins Owner*
-    * Azure Active Directory application registration with a display name
-* *.\deploy.ps1 -endtoend*
-This mode of the script creates the following resources:
-    * IoT hub
-    * event grid topic
-    * event grid endpoint
-    * route between endpoints of Azure Digital Twins instance
-    * storage account for Azure Functions
-    * Azure function app with a function name
-    * system-managed identity for Azure function
-    * Event Grid ingress subscription
+The sample can be run in either [Azure Cloud Shell](https://shell.azure.com) or a local [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli?view=azure-cli-latest) window.
 
-> [!NOTE]
-> When you run the script deploy.ps1, it stores the information in the config file. If you experience any errors in the script, delete the config file by using the command *rm config.json* and try to run the script again. You can also run the script again if you want to create instances in a different subscription. User will be prompted for any required information not present in *config.json*.
+### Setup with Azure Cloud Shell
+
+If using Azure Cloud Shell to run the script, here are the setup steps before running the script.
+
+1. Go to [Azure Cloud Shell](https://shell.azure.com) in a browser. Make sure *Select environment* dropdown in the navigation bar is set to *PowerShell*.
+
+2. Log into the Cloud Shell session by running the following command:
+
+    ```azurecli
+    az login
+    ```
+
+3. Upload the *deploy.ps1* file that you downloaded earlier to the Cloud Shell, by selecting the *Upload/Download* icon in the navigation bar.
+
+    ![Screenshot for uploading a file to Azure Cloud Shell](/media/scripts/cloud-shell-upload-file.png)
+
+    Find the file in the upload window and hit "Open."
+
+### Script run modes
+
+The script will request user input as it moves through a predefined list of resources to deploy. Follow the prompts, providing new names for resources when requested. You can also respond to the prompts with the names of existing resources to bypass creation of a new resource for that prompt.
+
+The *deploy.ps1* script can be run in two modes. use either of the commands below to run your preferred mode of the script.
+
+* Run command: `.\deploy.ps1`
+
+    This mode of the script is intended to completely deploy an Azure Digital Twins instance, including setting up the required permissions. It accompanies the following documentation: [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted).
+
+    Running the script in this mode creates the following resources:
+    - A resource group
+    - An Azure Digital Twins instance
+    - A role assignment of *Azure Digital Twins Owner (Preview)* on the Azure Digital Twins instance for the user that's signed into Cloud Shell
+    - An Azure Active Directory application registration for client apps that need to authenticate to the Azure Digital Twins APIs
+
+* Run command: `.\deploy.ps1 -endtoend`
+
+    In addition to everything completed by the first mode, this mode of the script is intended to set up additional Azure resources that can be used along with your Azure Digital Twins instance to set up an end-to-end solution with live data flow. It accompanies the following documentation: [*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code).
+
+    Running the script in this mode creates the following resources:
+    - An IoT hub
+    - An Event Grid topic
+    - An Event Grid endpoint
+    - A route between endpoints of Azure Digital Twins instance
+    - A storage account for Azure Functions
+    - An Azure Functions app
+    - A system-managed identity for the Azure function to use
+    - An Event Grid ingress subscription
+
+>[!NOTE]
+>At this time, the tutorial that accompanies the script's `-endtoend` mode ([*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code)) does not officially rely on the script as part of the tutorial flow. Instead, the tutorial document includes steps to set up each of these resources manually. You can use the script and tutorial instructions together to compile your solution as you see fit.
+
+## Re-running the sample
+
+In the event of an erroring input that aborts the script before it's finished with its entire flow, there is a built-in mechanism to allow you to re-run the script and pick up where you left off, without duplicating all the resources already created in early steps.
+
+As you run the script, it stores information about the resources being created in a *config.json* file that is added to the script's directory.
+
+Every time the script is run, it checks this config file to see what steps have already been completed, and will skip over these to pick up where you left off on the previous run. The user is prompted for any required information that's not present in *config.json*.
+
+If you want to run the script from the beginning, **including situations where you want to use the script for a second deployment after a successful first deployment**, delete this config file. You can use the command *rm config.json*.
 
 ![Screenshot of removing config file from the directory](/media/scripts/removing-config-file.png)
 
-Once your deployment is complete, you can [*Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code) using the resources created by running the scripts.
+## Next steps
 
-For more information on using this script to set up your Azure Digital Twins instance including verification steps, see [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted) article.
+For more information on using this script to set up your Azure Digital Twins instance, including verification steps for the instance and permissions you've set up, see [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted) in the Azure Digital Twins documentation.
+
+Once your deployment is complete, you can use your new Azure Digital Twins instance to [*connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code). This tutorial uses the resources created by running the script in `-endtoend` mode.
