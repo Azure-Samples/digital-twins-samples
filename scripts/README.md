@@ -78,14 +78,18 @@ The *deploy.ps1* script can be run in two modes. use either of the commands belo
     In addition to everything completed by the first mode, this mode of the script is intended to set up additional Azure resources that can be used along with your Azure Digital Twins instance to set up an end-to-end solution with live data flow. It accompanies the following documentation: [*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code).
 
     Running the script in this mode creates the following resources:
+    - Everything from the first mode of the script (resource group, instance, role assignment, app registration)
     - An IoT hub
     - An Event Grid topic
-    - An Event Grid endpoint
-    - A route between endpoints of Azure Digital Twins instance
+    - An Event Grid endpoint in the Azure Digital Twins instance
+    - A route to the endpoint in the Azure Digital Twins instance
     - A storage account for Azure Functions
     - An Azure Functions app
     - A system-managed identity for the Azure function to use
-    - An Event Grid ingress subscription
+    - An Azure function for data ingress
+    - An Azure function for processing data through the Azure Digital Twins instance
+    - An Event Grid subscription for data ingress
+    - An Event Grid subscription for data processing
 
 >[!NOTE]
 >At this time, the tutorial that accompanies the script's `-endtoend` mode ([*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code)) does not officially rely on the script as part of the tutorial flow. Instead, the tutorial document includes steps to set up each of these resources manually. You can use the script and tutorial instructions together to compile your solution as you see fit.
