@@ -1,8 +1,8 @@
-// Default URL for triggering event grid function in the local environment.
-// http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
-
+using System;
+using System.Net.Http;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
+using Azure.DigitalTwins.Core.Serialization;
 using Azure.Identity;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
@@ -10,19 +10,13 @@ using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Net.Http;
-using System.Text;
 
 namespace SampleFunctionsApp
 {
-    // This class processes telemetry events from IoT Hub, reads temperature of a device,
-    // sets the "Temperature" property of the device with the value of the telemetry,
-    // Finds the room that contains the device and sets the room Temperature property
-    // to the latest telemetry value.
+    // This class processes telemetry events from IoT Hub, reads temperature of a device
+    // and sets the "Temperature" property of the device with the value of the telemetry.
     public class ProcessHubToDTEvents
     {
-        const string adtAppId = "https://digitaltwins.azure.net";
         private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
         private static readonly HttpClient httpClient = new HttpClient();
 
@@ -30,58 +24,39 @@ namespace SampleFunctionsApp
         public async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
         {
             // After this is deployed, you need to turn the Managed Identity Status to "On",
-            // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role to this function identity
-            // in order for this function to be authorized on ADT APIs.
+            // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role
+            // to this function identity in order for this function to be authorized on ADT APIs.
+            if (adtInstanceUrl == null) log.LogError("Application setting \"ADT_SERVICE_URL\" not set");
 
-            log.LogInformation(eventGridEvent.Data.ToString());
             try
             {
-                // Authenticate on ADT APIs
-                var cred = new ManagedIdentityCredential(adtAppId);
-                var client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
+                //Authenticate with Digital Twins
+                ManagedIdentityCredential cred = new ManagedIdentityCredential("https://digitaltwins.azure.net");
+                DigitalTwinsClient client = new DigitalTwinsClient(
+                    new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions
+                    { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation($"ADT service client connection created.");
 
-                if (client != null)
+                if (eventGridEvent != null && eventGridEvent.Data != null)
                 {
-                    if (eventGridEvent != null && eventGridEvent.Data != null)
-                    {
-                        #region Open this region for message format information
-                        // Telemetry message format
-                        //{
-                        //  "properties": { },
-                        //  "systemProperties": 
-                        // {
-                        //    "iothub-connection-device-id": "thermostat1",
-                        //    "iothub-connection-auth-method": "{\"scope\":\"device\",\"type\":\"sas\",\"issuer\":\"iothub\",\"acceptingIpFilterRule\":null}",
-                        //    "iothub-connection-auth-generation-id": "637199981642612179",
-                        //    "iothub-enqueuedtime": "2020-03-18T18:35:08.269Z",
-                        //    "iothub-message-source": "Telemetry"
-                        //  },
-                        //  "body": "eyJUZW1wZXJhdHVyZSI6NzAuOTI3MjM0MDg3MTA1NDg5fQ=="
-                        //}
-                        #endregion
+                    log.LogInformation(eventGridEvent.Data.ToString());
 
-                        // Reading deviceId from message headers
-                        log.LogInformation(eventGridEvent.Data.ToString());
-                        JObject job = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
-                        string deviceId = (string)job["systemProperties"]["iothub-connection-device-id"];
-                        log.LogInformation($"Found device: {deviceId}");
+                    // Reading deviceId and temperature for IoT Hub JSON
+                    JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
+                    string deviceId = (string)deviceMessage["systemProperties"]["iothub-connection-device-id"];
+                    var temperature = deviceMessage["body"]["Temperature"];
 
-                        // Extracting temperature from device telemetry
-                        byte[] body = Convert.FromBase64String(job["body"].ToString());
-                        var value = Encoding.ASCII.GetString(body);
-                        var bodyProperty = (JObject)JsonConvert.DeserializeObject(value);
-                        JToken temperature = bodyProperty["Temperature"];
-                        log.LogInformation($"Device Temperature is ({temperature.Type}): {temperature}");
+                    log.LogInformation($"Device:{deviceId} Temperature is:{temperature}");
 
-                        // Update device Temperature property
-                        await AdtUtilities.UpdateTwinPropertyAsync(client, deviceId, "/Temperature", temperature.Value<float>(), log);
-                    }
+                    //Update twin using device temperature
+                    var uou = new UpdateOperationsUtility();
+                    uou.AppendReplaceOp("/Temperature", temperature.Value<double>());
+                    await client.UpdateDigitalTwinAsync(deviceId, uou.Serialize());
                 }
             }
             catch (Exception e)
             {
-                log.LogError($"Error: {e.Message}");
+                log.LogError($"Error in ingest function: {e.Message}");
             }
         }
     }
