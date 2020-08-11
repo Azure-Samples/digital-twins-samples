@@ -107,6 +107,16 @@ If you want to run the script from the beginning, **including situations where y
 
 ![Screenshot of removing config file from the directory](/media/scripts/rm-config-file.png)
 
+## Known issues
+
+### Failure to create Event Grid subscription in -endtoend mode
+
+As a result of Event Grid CLI support limitations, the script may fail to create an Event Grid subscription. This may happen because the files are still being written while the command is executing.
+
+To resolve, you can wait a few minutes and try again, or complete this step using the manual Azure portal instructions:
+* [Event Grid ingress subscription](https://docs.microsoft.com/azure/digital-twins/tutorial-end-to-end#connect-the-iot-hub-to-the-azure-function)
+* [Event Grid processing subscription](https://docs.microsoft.com/azure/digital-twins/tutorial-end-to-end#connect-the-function-to-event-grid)
+
 ## Next steps
 
 For more information on using this script to set up your Azure Digital Twins instance, including verification steps for the instance and permissions you've set up, see [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted) in the Azure Digital Twins documentation.
