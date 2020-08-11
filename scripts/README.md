@@ -16,22 +16,23 @@ You can use the script directly to deploy resources, or reference it as a starti
 
 ## Prerequisites
 
-* You'll need an Azure subscription. You can set one up for free [here](https://azure.microsoft.com/free/?WT.mc_id=A261C142F).
-* To be able to run the full script, you need to be classified as an Owner in your Azure subscription.
-    * You can check your permission level by running this command in Cloud Shell:
+You'll need an Azure subscription. You can set one up for free [here](https://azure.microsoft.com/free/?WT.mc_id=A261C142F).
 
-```azurecli-interactive
-az role assignment list --assignee <your-Azure-email>
-```
+### Permission requirements
 
-If you are an owner, the `roleDefinitionName` value in the output is *Owner*:
+To be able to run the full script, you need to have a [role in your subscription](https://docs.microsoft.com/azure/articles/role-based-access-control/rbac-and-directory-admin-roles.md) that has the following permissions:
+* Create and manage Azure resources
+* Manage user access to Azure resources (including granting and delegating permissions)
 
-![Screenshot of user checking role owner](/media/scripts/owner-role.png)
+Common roles that meet this requirement are *Owner*, *Account admin*, or the combination of *User Access Administrator* and *Contributor*. For a complete explanation of roles and permissions, including what permissions are included with other roles, visit [*Classic subscription administrator roles, Azure roles, and Azure AD roles*](https://docs.microsoft.com/azure/articles/role-based-access-control/rbac-and-directory-admin-roles.md) in the Azure RBAC documentation.
 
-If you find that the value is *Contributor* or something other than *Owner*, you can proceed in one of the following ways:
+To view your role in your subscription, visit the [subscriptions page](https://portal.azure.com/#blade/Microsoft_Azure_Billing/SubscriptionsBlade) in the Azure portal (you can use this link or look for *Subscriptions* with the portal search bar). Look for the name of the subscription you are using, and view your role for it in the *My role* column:
 
-* Contact your subscription Owner and request the Owner to run the script on your behalf.
-* Contact either your subscription Owner or someone with User Access Admin role on the subscription, and request that they elevate you to Owner on the subscription so that you will have the permissions to proceed yourself. Whether this is appropriate depends on your organization and your role within it.
+:::image type="content" source="../media/scripts/subscriptions-role.png" alt-text="View of the Subscriptions page in the Azure portal, showing user as an owner" lightbox="../media/scripts/subscriptions-role.png":::
+
+If you find that the value is *Contributor*, or another role that doesn't have the required permissions described above, you can contact the user on your subscription that *does* have these permissions (such as a subscription Owner or Account admin) and proceed in one of the following ways:
+* Request that they run the script on your behalf
+* Request that they elevate your role on the subscription so that you will have the permissions to proceed yourself. Whether this is appropriate depends on your organization and your role within it.
 
 ## Running the sample
 
