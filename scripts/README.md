@@ -71,7 +71,7 @@ The *deploy.ps1* script can be run in two modes. use either of the commands belo
     Running the script in this mode creates the following resources:
     - A resource group
     - An Azure Digital Twins instance
-    - A role assignment of *Azure Digital Twins Owner (Preview)* on the Azure Digital Twins instance for the user that's signed into Cloud Shell
+    - A role assignment of *Azure Digital Twins Owner (Preview)* on the Azure Digital Twins instance for the user that's signed into Cloud Shell. *For potential difficulty with this step, see [Known issues](#known-issues) section below.*
     - An Azure Active Directory application registration for client apps that need to authenticate to the Azure Digital Twins APIs
 
 * Run command: `.\deploy.ps1 -endtoend`
@@ -89,8 +89,8 @@ The *deploy.ps1* script can be run in two modes. use either of the commands belo
     - A system-managed identity for the Azure function to use
     - An Azure function for data ingress
     - An Azure function for processing data through the Azure Digital Twins instance
-    - An Event Grid subscription for data ingress
-    - An Event Grid subscription for data processing
+    - An Event Grid subscription for data ingress. *For potential difficulty with this step, see [Known issues](#known-issues) section below.*
+    - An Event Grid subscription for data processing. *For potential difficulty with this step, see [Known issues](#known-issues) section below.*
 
 >[!NOTE]
 >At this time, the tutorial that accompanies the script's `-endtoend` mode ([*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code)) does not officially rely on the script as part of the tutorial flow. Instead, the tutorial document includes steps to set up each of these resources manually. You can use the script and tutorial instructions together to compile your solution as you see fit.
@@ -108,6 +108,16 @@ If you want to run the script from the beginning, **including situations where y
 ![Screenshot of removing config file from the directory](/media/scripts/rm-config-file.png)
 
 ## Known issues
+
+### Failure to set up role assignment for MSA users
+
+The role assignment step of the script may currently fail for users logged in with a personal [Microsoft account (MSA)](https://account.microsoft.com/account). This is not outputted as a script failure, but will impact creation of other resources down the road.
+
+To determine whether your role assignment was successfully set up after running the script, see instructions in the [*Verify role assignment* section](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted#verify-user-role-assignment) of [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted) for Azure Digital Twins.
+
+For instructions on how to set up a role assignment manually, see the corresponding setup instructions for either of the following methods:
+* [CLI](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-cli#set-up-user-access-permissions)
+* [portal](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-portal#set-up-user-access-permissions)
 
 ### Failure to create Event Grid subscription in -endtoend mode
 
