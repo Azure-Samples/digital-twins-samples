@@ -109,7 +109,7 @@ namespace SampleClientApp
                 {
                     includeModelDefinitions = bool.Parse(cmd[1]);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Log.Error("If you specify more than one parameter, your second parameter needs to be a boolean (return full model yes/no)");
                 }
