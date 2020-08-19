@@ -3,7 +3,6 @@
 using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
 using Azure.Identity;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
@@ -22,9 +21,13 @@ namespace SampleFunctionsApp
     // to the value from the notification.
     public static class ProcessDTRoutedData
     {
-        const string adtAppId = "https://digitaltwins.azure.net";
-        private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
         private static readonly HttpClient httpClient = new HttpClient();
+        private static AdtConfiguration adtConfig { set; get; }
+
+        static ProcessDTRoutedData()
+        {
+            adtConfig = ConfigurationHelper.GetAdtConfiguration();
+        }
 
         [FunctionName("ProcessDTRoutedData")]
         public static async Task Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
@@ -38,8 +41,8 @@ namespace SampleFunctionsApp
             // Authenticate on ADT APIs
             try
             {
-                ManagedIdentityCredential cred = new ManagedIdentityCredential(adtAppId);
-                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
+                var credentials = new DefaultAzureCredential();
+                client = new DigitalTwinsClient(new Uri(adtConfig.InstanceUrl), credentials, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation("ADT service client connection created.");
             }
             catch (Exception e)

@@ -17,8 +17,13 @@ namespace SampleFunctionsApp
     // and sets the "Temperature" property of the device with the value of the telemetry.
     public class ProcessHubToDTEvents
     {
-        private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
         private static readonly HttpClient httpClient = new HttpClient();
+        private static AdtConfiguration adtConfig;
+
+        static ProcessHubToDTEvents()
+        {
+            adtConfig = ConfigurationHelper.GetAdtConfiguration();
+        }
 
         [FunctionName("ProcessHubToDTEvents")]
         public async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
@@ -26,14 +31,13 @@ namespace SampleFunctionsApp
             // After this is deployed, you need to turn the Managed Identity Status to "On",
             // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role
             // to this function identity in order for this function to be authorized on ADT APIs.
-            if (adtInstanceUrl == null) log.LogError("Application setting \"ADT_SERVICE_URL\" not set");
 
             try
             {
                 //Authenticate with Digital Twins
-                ManagedIdentityCredential cred = new ManagedIdentityCredential("https://digitaltwins.azure.net");
+                var credentials = new DefaultAzureCredential();
                 DigitalTwinsClient client = new DigitalTwinsClient(
-                    new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions
+                    new Uri(adtConfig.InstanceUrl), credentials, new DigitalTwinsClientOptions
                     { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation($"ADT service client connection created.");
 
