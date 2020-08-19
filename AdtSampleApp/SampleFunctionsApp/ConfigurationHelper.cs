@@ -9,7 +9,7 @@ namespace SampleFunctionsApp
         {
             var config = new AdtConfiguration();
             var Configuration = new ConfigurationBuilder()
-            .SetBasePath(Environment.CurrentDirectory)
+                .SetBasePath(Environment.CurrentDirectory)
                 .AddJsonFile("local.settings.json", true)
                 .AddEnvironmentVariables()
                 .Build();
