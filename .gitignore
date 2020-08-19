@@ -350,8 +350,3 @@ MigrationBackup/
 
 .DS_Store
 .vscode/
-
-# App configuration files
-/buildingScenario/AdtSampleApp/SampleClientApp/serviceConfig.json
-buildingScenario/AdtSampleApp/SampleClientApp/serviceConfig.json
-[Aa]pp[Ss]ettings.json
