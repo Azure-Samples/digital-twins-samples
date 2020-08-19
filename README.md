@@ -6,7 +6,7 @@ languages:
 products:
 - azure-digital-twins
 name: Azure Digital Twins samples
-description: These are code samples for working with Azure Digital Twins.
+description: These are code samples for working with the latest version of Azure Digital Twins.
 urlFragment: digital-twins-samples
 ---
 
