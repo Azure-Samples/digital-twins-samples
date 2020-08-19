@@ -347,9 +347,10 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
-/buildingScenario/AdtSampleApp/SampleClientApp/serviceConfig.json
+
 .DS_Store
 .vscode/
+
+/buildingScenario/AdtSampleApp/SampleClientApp/serviceConfig.json
 buildingScenario/AdtSampleApp/SampleClientApp/serviceConfig.json
-.DS_Store
-/AdtSampleApp/SampleClientApp/serviceConfig.json
+AdtSampleApp/SampleClientApp/appsettings.json
