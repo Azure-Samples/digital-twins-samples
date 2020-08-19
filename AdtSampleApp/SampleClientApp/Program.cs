@@ -17,7 +17,9 @@ namespace SampleClientApp
             try
             {
                 // Read configuration data from the 
-                IConfiguration config = new ConfigurationBuilder().Build();
+                IConfiguration config = new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                    .Build();
                 adtInstanceUrl = new Uri(config["instanceUrl"]);
             }
             catch (Exception)
