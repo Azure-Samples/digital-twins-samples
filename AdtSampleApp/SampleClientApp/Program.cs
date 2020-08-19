@@ -33,28 +33,15 @@ namespace SampleClientApp
             {
                 var credential = new DefaultAzureCredential();
                 client = new DigitalTwinsClient(adtInstanceUrl, credential);
-                // force authentication to happen here
-                try
-                {
-                    client.GetDigitalTwin("---");
-                }
-                catch (RequestFailedException)
-                {
-                    // As we are intentionally try to retrieve a twin that is most likely not going to exist, this exception is expected
-                    // We just do this to force the authentication library to authenticate ahead
-                }
-                catch (Exception e)
-                {
-                    Log.Error($"Authentication or client creation error: {e.Message}");
-                    Log.Alert($"Have you checked that the configuration in serviceConfig.json is correct?");
-                    Environment.Exit(0);
-                }
+
+                // Make a call to the API to force authentication to happen here
+                client.Query("SELECT * FROM DIGITALTWINS");
             }
             catch (Exception e)
             {
-                Log.Error($"Authentication or client creation error: {e.Message}");
-                Log.Alert($"Have you checked that the configuration in serviceConfig.json is correct?");
-                Environment.Exit(0);
+                Log.Error($"Authentication or client creation error: {e.Message}.");
+                Log.Alert($"Refer to https://github.com/Azure/azure-sdk-for-net/blob/Azure.Identity_1.2.0/sdk/identity/Azure.Identity/README.md#authenticate-the-client on how to authenticate to Azure.");
+                return;
             }
 
             Log.Ok($"Service client created – ready to go");
