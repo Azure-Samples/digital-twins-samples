@@ -3,55 +3,34 @@ using Azure.DigitalTwins.Core;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace SampleClientApp
 {
     public class Program
     {
-        // Properties to establish connection
-        // Please copy the file serviceConfig.json.TEMPLATE to serviceConfig.json 
-        // and set up these values in the config file
-        private static string clientId;
-        private static string tenantId;
-        private static string adtInstanceUrl;
-
         private static DigitalTwinsClient client;
 
         static async Task Main()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                int width = Math.Min(Console.LargestWindowWidth, 150);
-                int height = Math.Min(Console.LargestWindowHeight, 40);
-                Console.SetWindowSize(width, height);
-            }
-
+            Uri adtInstanceUrl;
             try
             {
                 // Read configuration data from the 
-                IConfiguration config = new ConfigurationBuilder()
-                    .AddJsonFile("serviceConfig.json", false, true)
-                    .Build();
-                clientId = config["clientId"];
-                tenantId = config["tenantId"];
-                adtInstanceUrl = config["instanceUrl"];
+                IConfiguration config = new ConfigurationBuilder().Build();
+                adtInstanceUrl = new Uri(config["instanceUrl"]);
             }
             catch (Exception)
             {
-                Log.Error($"Could not read service configuration file serviceConfig.json");
-                Log.Alert($"Please copy serviceConfig.json.TEMPLATE to serviceConfig.json");
-                Log.Alert($"and edit to reflect your service connection settings.");
-                Log.Alert($"Make sure that 'Copy always' or 'Copy if newer' is set for serviceConfig.json in VS file properties");
-                Environment.Exit(0);
+                Log.Error($"Could not read configuration. Have you configured your ADT instance URL in appsettings.json?");
+                return;
             }
 
             Log.Ok("Authenticating...");
             try
             {
-                var credential = new InteractiveBrowserCredential(tenantId, clientId);
-                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), credential);
+                var credential = new DefaultAzureCredential();
+                client = new DigitalTwinsClient(adtInstanceUrl, credential);
                 // force authentication to happen here
                 try
                 {
