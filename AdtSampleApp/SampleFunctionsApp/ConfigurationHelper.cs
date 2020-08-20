@@ -13,7 +13,7 @@ namespace SampleFunctionsApp
                 .AddJsonFile("local.settings.json", optional: true)
                 .AddEnvironmentVariables()
                 .Build();
-            Configuration.GetSection("AdtConfiguration").Bind(config);
+            Configuration.GetSection(nameof(AdtConfiguration)).Bind(config);
 
             return config;
         }
