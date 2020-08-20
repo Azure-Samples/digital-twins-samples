@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.DigitalTwins.Core;
 using Azure.DigitalTwins.Core.Serialization;
+using Azure.Identity;
 using Microsoft.Azure.DigitalTwins.Parser;
 using System;
 using System.Collections.Generic;
@@ -1286,9 +1287,19 @@ namespace SampleClientApp
                         await cmd(commandArr);
                     }
                 }
-                catch (Exception)
+                catch (AuthenticationFailedException e)
                 {
-                    Log.Error("Invalid command. Please type 'help' for more information.");
+                    Log.Error($"Authentication failed: {e.Message}.");
+                    Log.Alert($"Refer to https://github.com/Azure/azure-sdk-for-net/blob/Azure.Identity_1.2.1/sdk/identity/Azure.Identity/README.md#authenticate-the-client on how to authenticate to Azure.");
+                    return;
+                }
+                catch (InvalidOperationException)
+                {
+                    Log.Error($"Invalid command. Please type 'help' for more information.");
+                }
+                catch(Exception e)
+                {
+                    Log.Error($"An unexpected issue occurred while executing the command.\n{e.Message}");
                 }
             }
         }

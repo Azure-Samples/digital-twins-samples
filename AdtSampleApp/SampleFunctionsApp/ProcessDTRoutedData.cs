@@ -48,40 +48,32 @@ namespace SampleFunctionsApp
 
             if (client != null)
             {
-                try
+                if (eventGridEvent != null && eventGridEvent.Data != null)
                 {
-                    if (eventGridEvent != null && eventGridEvent.Data != null)
+                    string twinId = eventGridEvent.Subject.ToString();
+                    JObject message = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
+
+                    log.LogInformation($"Reading event from {twinId}: {eventGridEvent.EventType}: {message["data"]}");
+
+                    //Find and update parent Twin
+                    string parentId = await AdtUtilities.FindParentAsync(client, twinId, "contains", log);
+                    if (parentId != null)
                     {
-                        string twinId = eventGridEvent.Subject.ToString();
-                        JObject message = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
-
-                        log.LogInformation($"Reading event from {twinId}: {eventGridEvent.EventType}: {message["data"]}");
-
-                        //Find and update parent Twin
-                        string parentId = await AdtUtilities.FindParentAsync(client, twinId, "contains", log);
-                        if (parentId != null)
+                        // Read properties which values have been changed in each operation
+                        foreach (var operation in message["data"]["patch"])
                         {
-                            // Read properties which values have been changed in each operation
-                            foreach (var operation in message["data"]["patch"])
+                            string opValue = (string)operation["op"];
+                            if (opValue.Equals("replace"))
                             {
-                                string opValue = (string)operation["op"];
-                                if (opValue.Equals("replace"))
-                                {
-                                    string propertyPath = ((string)operation["path"]);
+                                string propertyPath = ((string)operation["path"]);
 
-                                    if (propertyPath.Equals("/Temperature"))
-                                    {
-                                        await AdtUtilities.UpdateTwinPropertyAsync(client, parentId, propertyPath, operation["value"].Value<float>(), log);
-                                    }
+                                if (propertyPath.Equals("/Temperature"))
+                                {
+                                    await AdtUtilities.UpdateTwinPropertyAsync(client, parentId, propertyPath, operation["value"].Value<float>(), log);
                                 }
                             }
                         }
-
                     }
-                }
-                catch (Exception e)
-                {
-                    log.LogError(e.ToString());
                 }
             }
         }

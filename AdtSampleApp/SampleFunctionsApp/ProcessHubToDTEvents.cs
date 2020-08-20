@@ -27,35 +27,28 @@ namespace SampleFunctionsApp
             // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role
             // to this function identity in order for this function to be authorized on ADT APIs.
 
-            try
+            //Authenticate with Digital Twins
+            var credentials = new DefaultAzureCredential();
+            DigitalTwinsClient client = new DigitalTwinsClient(
+                new Uri(adtServiceUrl), credentials, new DigitalTwinsClientOptions
+                { Transport = new HttpClientTransport(httpClient) });
+            log.LogInformation($"ADT service client connection created.");
+
+            if (eventGridEvent != null && eventGridEvent.Data != null)
             {
-                //Authenticate with Digital Twins
-                var credentials = new DefaultAzureCredential();
-                DigitalTwinsClient client = new DigitalTwinsClient(
-                    new Uri(adtServiceUrl), credentials, new DigitalTwinsClientOptions
-                    { Transport = new HttpClientTransport(httpClient) });
-                log.LogInformation($"ADT service client connection created.");
+                log.LogInformation(eventGridEvent.Data.ToString());
 
-                if (eventGridEvent != null && eventGridEvent.Data != null)
-                {
-                    log.LogInformation(eventGridEvent.Data.ToString());
+                // Reading deviceId and temperature for IoT Hub JSON
+                JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
+                string deviceId = (string)deviceMessage["systemProperties"]["iothub-connection-device-id"];
+                var temperature = deviceMessage["body"]["Temperature"];
 
-                    // Reading deviceId and temperature for IoT Hub JSON
-                    JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
-                    string deviceId = (string)deviceMessage["systemProperties"]["iothub-connection-device-id"];
-                    var temperature = deviceMessage["body"]["Temperature"];
+                log.LogInformation($"Device:{deviceId} Temperature is:{temperature}");
 
-                    log.LogInformation($"Device:{deviceId} Temperature is:{temperature}");
-
-                    //Update twin using device temperature
-                    var uou = new UpdateOperationsUtility();
-                    uou.AppendReplaceOp("/Temperature", temperature.Value<double>());
-                    await client.UpdateDigitalTwinAsync(deviceId, uou.Serialize());
-                }
-            }
-            catch (Exception e)
-            {
-                log.LogError($"Error in ingest function: {e.Message}");
+                //Update twin using device temperature
+                var uou = new UpdateOperationsUtility();
+                uou.AppendReplaceOp("/Temperature", temperature.Value<double>());
+                await client.UpdateDigitalTwinAsync(deviceId, uou.Serialize());
             }
         }
     }

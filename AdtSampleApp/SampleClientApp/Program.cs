@@ -30,20 +30,8 @@ namespace SampleClientApp
             }
 
             Log.Ok("Authenticating...");
-            try
-            {
-                var credential = new DefaultAzureCredential();
-                client = new DigitalTwinsClient(adtInstanceUrl, credential);
-
-                // Make a call to the API to force authentication to happen here
-                client.Query("SELECT * FROM DIGITALTWINS");
-            }
-            catch (AuthenticationFailedException e)
-            {
-                Log.Error($"Authentication failed: {e.Message}.");
-                Log.Alert($"Refer to https://github.com/Azure/azure-sdk-for-net/blob/Azure.Identity_1.2.1/sdk/identity/Azure.Identity/README.md#authenticate-the-client on how to authenticate to Azure.");
-                return;
-            }
+            var credential = new DefaultAzureCredential();
+            client = new DigitalTwinsClient(adtInstanceUrl, credential);
 
             Log.Ok($"Service client created – ready to go");
 
