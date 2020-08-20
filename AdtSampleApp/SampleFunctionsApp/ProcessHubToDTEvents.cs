@@ -18,12 +18,7 @@ namespace SampleFunctionsApp
     public class ProcessHubToDTEvents
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private static AdtConfiguration adtConfig;
-
-        static ProcessHubToDTEvents()
-        {
-            adtConfig = ConfigurationHelper.GetAdtConfiguration();
-        }
+        private static string adtServiceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
 
         [FunctionName("ProcessHubToDTEvents")]
         public async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
@@ -37,7 +32,7 @@ namespace SampleFunctionsApp
                 //Authenticate with Digital Twins
                 var credentials = new DefaultAzureCredential();
                 DigitalTwinsClient client = new DigitalTwinsClient(
-                    new Uri(adtConfig.InstanceUrl), credentials, new DigitalTwinsClientOptions
+                    new Uri(adtServiceUrl), credentials, new DigitalTwinsClientOptions
                     { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation($"ADT service client connection created.");
 

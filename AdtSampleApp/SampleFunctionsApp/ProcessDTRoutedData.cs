@@ -22,12 +22,7 @@ namespace SampleFunctionsApp
     public static class ProcessDTRoutedData
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private static AdtConfiguration adtConfig { set; get; }
-
-        static ProcessDTRoutedData()
-        {
-            adtConfig = ConfigurationHelper.GetAdtConfiguration();
-        }
+        private static string adtServiceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
 
         [FunctionName("ProcessDTRoutedData")]
         public static async Task Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
@@ -42,7 +37,7 @@ namespace SampleFunctionsApp
             try
             {
                 var credentials = new DefaultAzureCredential();
-                client = new DigitalTwinsClient(new Uri(adtConfig.InstanceUrl), credentials, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
+                client = new DigitalTwinsClient(new Uri(adtServiceUrl), credentials, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation("ADT service client connection created.");
             }
             catch (Exception e)
