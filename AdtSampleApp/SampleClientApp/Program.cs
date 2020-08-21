@@ -1,9 +1,9 @@
-﻿using Azure;
-using Azure.DigitalTwins.Core;
+﻿using Azure.DigitalTwins.Core;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace SampleClientApp
@@ -14,6 +14,8 @@ namespace SampleClientApp
 
         static async Task Main()
         {
+            SetWindowSize();
+
             Uri adtInstanceUrl;
             try
             {
@@ -25,8 +27,8 @@ namespace SampleClientApp
             }
             catch (Exception ex) when (ex is FileNotFoundException || ex is UriFormatException)
             {
-                Log.Error($"Could not read configuration. Have you configured your ADT instance URL in appsettings.json?");
-                throw;
+                Log.Error($"Could not read configuration. Have you configured your ADT instance URL in appsettings.json?\n\nException message: {ex.Message}");
+                return;
             }
 
             Log.Ok("Authenticating...");
@@ -37,6 +39,16 @@ namespace SampleClientApp
 
             var CommandLoopInst = new CommandLoop(client);
             await CommandLoopInst.CliCommandInterpreter();
+        }
+
+        static void SetWindowSize()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                int width = Math.Min(Console.LargestWindowWidth, 150);
+                int height = Math.Min(Console.LargestWindowHeight, 40);
+                Console.SetWindowSize(width, height);
+            }
         }
     }
 }
