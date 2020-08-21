@@ -163,7 +163,6 @@ namespace SampleClientApp
             AsyncPageable<ModelData> results = client.GetModelsAsync(null, true);
             await foreach (ModelData md in results)
             {
-                Log.Out(md.Id);
                 if (md.Model != null)
                 {
                     Log.Out(md.Id);
