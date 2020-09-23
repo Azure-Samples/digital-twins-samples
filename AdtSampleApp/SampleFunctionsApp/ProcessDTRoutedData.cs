@@ -30,9 +30,12 @@ namespace SampleFunctionsApp
         public static async Task Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
         {
             log.LogInformation("Start execution");
-            // After this is deployed, you need to turn the Identity Status "On", 
-            // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role to this function identity
-            // in order for this function to be authorize on ADT APIs.
+            // After this is deployed, you need to turn the Azure Function Identity Status "On", 
+            // grab Object ID of the function, and assign "Azure Digital Twins Owner (Preview)" role to this function identity
+            // in order for this function to be authorized on ADT APIs.
+            //
+            // If you are following "Tutorial: Connect an end-to-end solution" in the Azure Digital Twins documentation, you have done this already
+            // in the "Assign permissions to the function app" section.
 
             DigitalTwinsClient client;
             // Authenticate on ADT APIs
