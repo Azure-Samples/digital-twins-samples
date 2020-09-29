@@ -61,7 +61,11 @@ namespace DeviceSimulator
                 message.ContentEncoding = "utf-8";
                 await deviceClient.SendEventAsync(message);
                 Console.WriteLine($"{DateTime.Now} > Sending message: {messageString}");
+                
+                //Warning: Avoid setting this below 1000
                 await Task.Delay(5000);
+                //Each twin in your instance has a hard update limit of 10 per second.
+                //Updates ever 1000ms give you a safe buffer to avoid throttling.
             }
         }
 
