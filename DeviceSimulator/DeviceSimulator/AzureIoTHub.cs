@@ -62,10 +62,9 @@ namespace DeviceSimulator
                 await deviceClient.SendEventAsync(message);
                 Console.WriteLine($"{DateTime.Now} > Sending message: {messageString}");
                 
-                //Warning: Avoid setting this below 1000
+                //Keep this value above 1000 to keep a safe buffer above the ADT service limits
+                //See https://aka.ms/adt-limits for more info
                 await Task.Delay(5000);
-                //Each twin in your instance has a hard update limit of 10 per second.
-                //Updates ever 1000ms give you a safe buffer to avoid throttling.
             }
         }
 
