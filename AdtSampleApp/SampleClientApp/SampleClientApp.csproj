@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.0.0-preview.3" />
+    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.0.0-alpha.20201008.1" />
     <PackageReference Include="Azure.Identity" Version="1.1.1" />
     <PackageReference Include="Microsoft.Azure.DigitalTwins.Parser" Version="3.8.0" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.4.0" />

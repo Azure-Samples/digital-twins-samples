@@ -54,9 +54,9 @@ namespace SampleClientApp
                     r.Close();
                     dtdlList.Add(dtdl);
                 }
-                Response<ModelData[]> res = await client.CreateModelsAsync(dtdlList);
+                Response<Azure.DigitalTwins.Core.DigitalTwinsModelData[]> res = await client.CreateModelsAsync(dtdlList);
                 Log.Ok($"Model(s) created successfully!");
-                foreach (ModelData md in res.Value)
+                foreach (Azure.DigitalTwins.Core.DigitalTwinsModelData md in res.Value)
                     LogResponse(md.Model);
             }
             catch (RequestFailedException e)
@@ -121,9 +121,12 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                var reslist = new List<ModelData>();
-                AsyncPageable<ModelData> results = client.GetModelsAsync(dependenciesFor, includeModelDefinitions);
-                await foreach (ModelData md in results)
+                var reslist = new List<Azure.DigitalTwins.Core.DigitalTwinsModelData>();
+                var modelsOptions = new GetModelsOptions();
+                modelsOptions.DependenciesFor = dependenciesFor;
+                modelsOptions.IncludeModelDefinition = includeModelDefinitions;
+                AsyncPageable<Azure.DigitalTwins.Core.DigitalTwinsModelData> results = client.GetModelsAsync(modelsOptions);
+                await foreach (Azure.DigitalTwins.Core.DigitalTwinsModelData md in results)
                 {
                     Log.Out(md.Id);
                     if (md.Model != null)
@@ -157,7 +160,7 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                Response<ModelData> res = await client.GetModelAsync(modelId);
+                Response<Azure.DigitalTwins.Core.DigitalTwinsModelData> res = await client.GetModelAsync(modelId);
                 LogResponse(res.Value.Model);
             }
             catch (RequestFailedException e)
@@ -206,8 +209,11 @@ namespace SampleClientApp
             try
             {
                 var reslist = new List<string>();
-                AsyncPageable<ModelData> results = client.GetModelsAsync(null, true);
-                await foreach (ModelData md in results)
+                var modelsOptions = new GetModelsOptions();
+                modelsOptions.DependenciesFor = null;
+                modelsOptions.IncludeModelDefinition = true;
+                AsyncPageable<Azure.DigitalTwins.Core.DigitalTwinsModelData> results = client.GetModelsAsync(modelsOptions);
+                await foreach (Azure.DigitalTwins.Core.DigitalTwinsModelData md in results)
                 {
                     Log.Out(md.Id);
                     if (md.Model != null)
@@ -656,8 +662,8 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                AsyncPageable<IncomingRelationship> res = client.GetIncomingRelationshipsAsync(sourceTwinId);
-                await foreach (IncomingRelationship ie in res)
+                AsyncPageable<Azure.DigitalTwins.Core.IncomingRelationship> res = client.GetIncomingRelationshipsAsync(sourceTwinId);
+                await foreach (Azure.DigitalTwins.Core.IncomingRelationship ie in res)
                 {
                     Log.Ok($"Relationship: {ie.RelationshipName} from {ie.SourceId} | {ie.RelationshipId}");
                 }
@@ -685,12 +691,12 @@ namespace SampleClientApp
             }
 
             string routeId = cmd[1];
-            var er = new EventRoute(cmd[2]);
-
             var sb = new StringBuilder();
             for (int i = 3; i < cmd.Length; i++)
                 sb.Append(cmd[i] + " ");
-            er.Filter = sb.ToString();
+            var er = new Azure.DigitalTwins.Core.EventRoute(cmd[2], sb.ToString());
+
+            
             Log.Alert($"Submitting...");
             try
             {
@@ -722,7 +728,7 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                Response<EventRoute> res = await client.GetEventRouteAsync(routeId);
+                Response<Azure.DigitalTwins.Core.EventRoute> res = await client.GetEventRouteAsync(routeId);
                 if (res != null && res.Value != null)
                 {
                     Log.Out($"Route {res.Value.Id} to {res.Value.EndpointName}");
@@ -748,8 +754,8 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                AsyncPageable<EventRoute> res = client.GetEventRoutesAsync();
-                await foreach (EventRoute er in res)
+                AsyncPageable<Azure.DigitalTwins.Core.EventRoute> res = client.GetEventRoutesAsync();
+                await foreach (Azure.DigitalTwins.Core.EventRoute er in res)
                 {
                     Log.Out($"Route {er.Id} to {er.EndpointName}");
                     Log.Out($"  Filter: {er.Filter}");
@@ -822,9 +828,9 @@ namespace SampleClientApp
             try
             {
                 // GetRelationshipssAsync will throw if an error occurs
-                AsyncPageable<IncomingRelationship> incomingRels = client.GetIncomingRelationshipsAsync(dtId);
+                AsyncPageable<Azure.DigitalTwins.Core.IncomingRelationship> incomingRels = client.GetIncomingRelationshipsAsync(dtId);
 
-                await foreach (IncomingRelationship incomingRel in incomingRels)
+                await foreach (Azure.DigitalTwins.Core.IncomingRelationship incomingRel in incomingRels)
                 {
                     await client.DeleteRelationshipAsync(incomingRel.SourceId, incomingRel.RelationshipId);
                     Log.Ok($"Deleted incoming relationship {incomingRel.RelationshipId} from {dtId}");
