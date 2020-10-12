@@ -755,7 +755,7 @@ namespace SampleClientApp
                     {
                         JsonDocument.Parse(dtdl);
                     }
-                    catch (Exception ex) when (ex is JsonException || ex is ArgumentException)
+                    catch (Exception ex) when (ex is System.Text.Json.JsonException || ex is ArgumentException)
                     {
                         Log.Error($"Invalid json found in file {fi.FullName}.\nJson parser error \n{ex.Message}");
                         errJson++;
