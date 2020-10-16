@@ -290,8 +290,7 @@ if ($result){
     Start-Sleep -Seconds $cooloff
 }
 
-if ($registerAadApp)
-{
+if ($registerAadApp) {
     #create aad app
     $display_name = ""
     if (Get-Member -InputObject $config -Name "display_name" -MemberType Properties) {
