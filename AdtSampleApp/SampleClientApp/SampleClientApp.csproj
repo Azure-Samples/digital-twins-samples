@@ -15,21 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.0.0-preview.3" />
-    <PackageReference Include="Azure.Identity" Version="1.2.3" />
+<PackageReference Include="Azure.DigitalTwins.Core" Version="1.0.0-preview.3" />
+<PackageReference Include="Azure.Identity" Version="1.2.3" />
     <PackageReference Include="Microsoft.Azure.DigitalTwins.Parser" Version="3.12.5" />
-    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.6.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.7.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.8" />
-    <PackageReference Include="Microsoft.Identity.Client" Version="4.19.0" />
-    <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.22" />
-    <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure" Version="3.3.19" />
-    <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
-    <PackageReference Include="System.Security.Cryptography.Encoding" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.Primitives" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="4.7.0" />
-    <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.9" />
   </ItemGroup>
 
   <ItemGroup>
@@ -69,7 +58,7 @@
     <None Update="Models\Ward.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="serviceConfig.json">
+    <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
