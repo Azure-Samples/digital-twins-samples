@@ -1,7 +1,6 @@
 ﻿using Azure;
 using Azure.DigitalTwins.Core;
 using Azure.DigitalTwins.Core.Serialization;
-using Azure.Identity;
 using Microsoft.Azure.DigitalTwins.Parser;
 using System;
 using System.Collections.Generic;
@@ -44,21 +43,29 @@ namespace SampleClientApp
             string consoleAppDir = Path.Combine(Directory.GetCurrentDirectory(), @"Models");
             Log.Alert($"Reading from {consoleAppDir}");
             Log.Alert(string.Format("Submitting models: {0}...", string.Join(", ", filenameArray)));
-
-            List<string> dtdlList = new List<string>();
-            for (int i = 0; i < filenameArray.Length; i++)
+            try
             {
-                filename = Path.Combine(consoleAppDir, filenameArray[i]);
-                StreamReader r = new StreamReader(filename);
-                string dtdl = r.ReadToEnd();
-                r.Close();
-                dtdlList.Add(dtdl);
+                List<string> dtdlList = new List<string>();
+                for (int i = 0; i < filenameArray.Length; i++)
+                {
+                    filename = Path.Combine(consoleAppDir, filenameArray[i]);
+                    StreamReader r = new StreamReader(filename);
+                    string dtdl = r.ReadToEnd();
+                    r.Close();
+                    dtdlList.Add(dtdl);
+                }
+                Response<ModelData[]> res = await client.CreateModelsAsync(dtdlList);
+                Log.Ok($"Model(s) created successfully!");
+                foreach (ModelData md in res.Value)
+                    LogResponse(md.Model);
             }
-            Response<DigitalTwinsModelData[]> res = await client.CreateModelsAsync(dtdlList);
-            Log.Ok($"Model(s) created successfully!");
-            foreach (DigitalTwinsModelData md in res.Value)
+            catch (RequestFailedException e)
             {
-                LogResponse(md.Model);
+                Log.Error($"Response {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex.Message}");
             }
         }
 
@@ -74,9 +81,19 @@ namespace SampleClientApp
             }
             string modelId = cmd[1];
             Log.Alert($"Submitting...");
-
-            await client.DecommissionModelAsync(modelId);
-            Log.Ok($"Model decommissioned successfully!");
+            try
+            {
+                await client.DecommissionModelAsync(modelId);
+                Log.Ok($"Model decommissioned successfully!");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
         /// <summary>
@@ -92,7 +109,7 @@ namespace SampleClientApp
                 {
                     includeModelDefinitions = bool.Parse(cmd[1]);
                 }
-                catch (Exception ex) when (ex is FormatException)
+                catch (Exception e)
                 {
                     Log.Error("If you specify more than one parameter, your second parameter needs to be a boolean (return full model yes/no)");
                 }
@@ -102,23 +119,28 @@ namespace SampleClientApp
                 dependenciesFor = cmd.Skip(2).ToArray();
             }
             Log.Alert($"Submitting...");
-
-            var reslist = new List<DigitalTwinsModelData>();
-            var modelsOptions = new GetModelsOptions();
-            modelsOptions.DependenciesFor = dependenciesFor;
-            modelsOptions.IncludeModelDefinition = includeModelDefinitions;
-            AsyncPageable<DigitalTwinsModelData> results = client.GetModelsAsync(modelsOptions);
-            await foreach (DigitalTwinsModelData md in results)
+            try
             {
-                Log.Out(md.Id);
-                if (md.Model != null)
+                var reslist = new List<ModelData>();
+                AsyncPageable<ModelData> results = client.GetModelsAsync(dependenciesFor, includeModelDefinitions);
+                await foreach (ModelData md in results)
                 {
-                    LogResponse(md.Model);
+                    Log.Out(md.Id);
+                    if (md.Model != null)
+                        LogResponse(md.Model);
+                    reslist.Add(md);
                 }
-                reslist.Add(md);
+                Log.Out("");
+                Log.Alert($"Found {reslist.Count} model(s)");
             }
-            Log.Out("");
-            Log.Alert($"Found {reslist.Count} model(s)");
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -133,9 +155,19 @@ namespace SampleClientApp
             }
             string modelId = cmd[1];
             Log.Alert($"Submitting...");
-
-            Response<DigitalTwinsModelData> res = await client.GetModelAsync(modelId);
-            LogResponse(res.Value.Model);
+            try
+            {
+                Response<ModelData> res = await client.GetModelAsync(modelId);
+                LogResponse(res.Value.Model);
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -150,9 +182,19 @@ namespace SampleClientApp
             }
             string modelId = cmd[1];
             Log.Alert($"Submitting...");
-
-            await client.DeleteModelAsync(modelId);
-            Log.Ok("Model deleted successfully");
+            try
+            {
+                await client.DeleteModelAsync(modelId);
+                Log.Ok("Model deleted successfully");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -161,88 +203,104 @@ namespace SampleClientApp
         public async Task CommandDeleteAllModels(string[] cmd)
         {
             Log.Alert($"Submitting...");
-
-            var reslist = new List<string>();
-            var modelsOptions = new GetModelsOptions();
-            modelsOptions.DependenciesFor = null;
-            modelsOptions.IncludeModelDefinition = true;
-            AsyncPageable<DigitalTwinsModelData> results = client.GetModelsAsync(modelsOptions);
-            await foreach (DigitalTwinsModelData md in results)
-            {
-                if (md.Model != null)
-                {
-                    Log.Out(md.Id);
-                    reslist.Add(md.Model);
-                }
-            }
-            Log.Out("");
-            Log.Alert($"Found {reslist.Count} model(s)");
-
-            ModelParser parser = new ModelParser();
             try
             {
-                IReadOnlyDictionary<Dtmi, DTEntityInfo> om = await parser.ParseAsync(reslist);
-                Log.Ok("Models parsed successfully. Deleting models...");
+                var reslist = new List<string>();
+                AsyncPageable<ModelData> results = client.GetModelsAsync(null, true);
+                await foreach (ModelData md in results)
+                {
+                    Log.Out(md.Id);
+                    if (md.Model != null)
+                    {
+                        Log.Out(md.Id);
+                        reslist.Add(md.Model);
+                    }
+                }
+                Log.Out("");
+                Log.Alert($"Found {reslist.Count} model(s)");
 
-                var interfaces = new List<DTInterfaceInfo>();
-                IEnumerable<DTInterfaceInfo> ifenum = from entity in om.Values
-                                                        where entity.EntityKind == DTEntityKind.Interface
-                                                        select entity as DTInterfaceInfo;
-                interfaces.AddRange(ifenum);
-                int pass = 1;
-                // DeleteModels can only delete models that are not in the inheritance chain of other models
-                // or used as components by other models. Therefore, we use the model parser to parse the DTDL
-                // and then find the "leaf" models, and delete these.
-                // We repeat this process until no models are left.
-                while (interfaces.Count() > 0)
+                ModelParser parser = new ModelParser();
+                try
                 {
-                    Log.Out($"Model deletion pass {pass++}");
-                    Dictionary<Dtmi, DTInterfaceInfo> referenced = new Dictionary<Dtmi, DTInterfaceInfo>();
-                    foreach (DTInterfaceInfo i in interfaces)
+                    IReadOnlyDictionary<Dtmi, DTEntityInfo> om = await parser.ParseAsync(reslist);
+                    Log.Ok("Models parsed successfully. Deleting models...");
+
+                    var interfaces = new List<DTInterfaceInfo>();
+                    IEnumerable<DTInterfaceInfo> ifenum = from entity in om.Values
+                                                          where entity.EntityKind == DTEntityKind.Interface
+                                                          select entity as DTInterfaceInfo;
+                    interfaces.AddRange(ifenum);
+                    int pass = 1;
+                    // DeleteModels can only delete models that are not in the inheritance chain of other models
+                    // or used as components by other models. Therefore, we use the model parser to parse the DTDL
+                    // and then find the "leaf" models, and delete these.
+                    // We repeat this process until no models are left.
+                    while (interfaces.Count() > 0)
                     {
-                        foreach (DTInterfaceInfo ext in i.Extends)
+                        Log.Out($"Model deletion pass {pass++}");
+                        Dictionary<Dtmi, DTInterfaceInfo> referenced = new Dictionary<Dtmi, DTInterfaceInfo>();
+                        foreach (DTInterfaceInfo i in interfaces)
                         {
-                            referenced.TryAdd(ext.Id, ext);
+                            foreach (DTInterfaceInfo ext in i.Extends)
+                            {
+                                referenced.TryAdd(ext.Id, ext);
+                            }
+                            IEnumerable<DTComponentInfo> components = from content in i.Contents.Values
+                                                                      where content.EntityKind == DTEntityKind.Component
+                                                                      select content as DTComponentInfo;
+                            foreach (DTComponentInfo comp in components)
+                            {
+                                referenced.TryAdd(comp.Schema.Id, comp.Schema);
+                            }
                         }
-                        IEnumerable<DTComponentInfo> components = from content in i.Contents.Values
-                                                                    where content.EntityKind == DTEntityKind.Component
-                                                                    select content as DTComponentInfo;
-                        foreach (DTComponentInfo comp in components)
+                        List<DTInterfaceInfo> toDelete = new List<DTInterfaceInfo>();
+                        foreach (DTInterfaceInfo iface in interfaces)
                         {
-                            referenced.TryAdd(comp.Schema.Id, comp.Schema);
+                            if (referenced.TryGetValue(iface.Id, out DTInterfaceInfo result) == false)
+                            {
+                                Log.Alert($"Can delete {iface.Id}");
+                                toDelete.Add(iface);
+                            }
                         }
-                    }
-                    List<DTInterfaceInfo> toDelete = new List<DTInterfaceInfo>();
-                    foreach (DTInterfaceInfo iface in interfaces)
-                    {
-                        if (referenced.TryGetValue(iface.Id, out DTInterfaceInfo result) == false)
+                        foreach (DTInterfaceInfo del in toDelete)
                         {
-                            Log.Alert($"Can delete {iface.Id}");
-                            toDelete.Add(iface);
+                            interfaces.Remove(del);
+                            try
+                            {
+                                await client.DeleteModelAsync(del.Id.ToString());
+                                Log.Ok($"Model {del.Id} deleted successfully");
+                            }
+                            catch (RequestFailedException e)
+                            {
+                                Log.Error($"Error deleting model {e.Status}: {e.Message}");
+                            }
                         }
-                    }
-                    foreach (DTInterfaceInfo del in toDelete)
-                    {
-                        interfaces.Remove(del);
-                        await client.DeleteModelAsync(del.Id.ToString());
-                        Log.Ok($"Model {del.Id} deleted successfully");
                     }
                 }
+                catch (ParsingException pe)
+                {
+                    Log.Error($"*** Error parsing models");
+                    int derrcount = 1;
+                    foreach (ParsingError err in pe.Errors)
+                    {
+                        Log.Error($"Error {derrcount}:");
+                        Log.Error($"{err.Message}");
+                        Log.Error($"Primary ID: {err.PrimaryID}");
+                        Log.Error($"Secondary ID: {err.SecondaryID}");
+                        Log.Error($"Property: {err.Property}\n");
+                        derrcount++;
+                    }
+                    return;
+                }
+
             }
-            catch (ParsingException pe)
+            catch (RequestFailedException e)
             {
-                Log.Error($"*** Error parsing models");
-                int derrcount = 1;
-                foreach (ParsingError err in pe.Errors)
-                {
-                    Log.Error($"Error {derrcount}:");
-                    Log.Error($"{err.Message}");
-                    Log.Error($"Primary ID: {err.PrimaryID}");
-                    Log.Error($"Secondary ID: {err.SecondaryID}");
-                    Log.Error($"Property: {err.Property}\n");
-                    derrcount++;
-                }
-                return;
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex.Message}");
             }
         }
 
@@ -256,31 +314,39 @@ namespace SampleClientApp
             {
                 var sb = new StringBuilder();
                 for (int i = 1; i < cmd.Length; i++)
-                {
                     sb.Append(cmd[i] + " ");
-                }
                 query = sb.ToString();
             }
             Log.Alert($"Submitting query: {query}...");
             List<string> reslist = await Query(query);
-            foreach (string item in reslist)
+            if (reslist != null)
             {
-                LogResponse(item);
+                foreach (string item in reslist)
+                    LogResponse(item);
             }
             Log.Out("End Query");
         }
 
         private async Task<List<string>> Query(string query)
         {
-            var reslist = new List<string>();
-
-            AsyncPageable<string> qresult = client.QueryAsync(query);
-            await foreach (string item in qresult)
+            try
             {
-                reslist.Add(item);
+                AsyncPageable<string> qresult = client.QueryAsync(query);
+                var reslist = new List<string>();
+                await foreach (string item in qresult)
+                    reslist.Add(item);
+                return reslist;
             }
-
-            return reslist;
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -297,9 +363,7 @@ namespace SampleClientApp
             string modelId = cmd[1];
             string twinId = Guid.NewGuid().ToString();
             if (cmd.Length > 2)
-            {
                 twinId = cmd[2];
-            }
             string[] args = cmd.Skip(3).ToArray();
 
             var twinData = new BasicDigitalTwin
@@ -317,8 +381,19 @@ namespace SampleClientApp
             }
             Log.Alert($"Submitting...");
 
-            await client.CreateDigitalTwinAsync(twinData.Id, JsonSerializer.Serialize(twinData));
-            Log.Ok($"Twin '{twinId}' created successfully!");
+            try
+            {
+                await client.CreateDigitalTwinAsync(twinData.Id, JsonSerializer.Serialize(twinData));
+                Log.Ok($"Twin '{twinId}' created successfully!");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
         /// <summary>
@@ -334,8 +409,19 @@ namespace SampleClientApp
 
             string twinId = cmd[1];
             Log.Alert($"Submitting...");
-            await client.DeleteDigitalTwinAsync(twinId);
-            Log.Ok($"Twin '{twinId}' deleted successfully!");
+            try
+            {
+                await client.DeleteDigitalTwinAsync(twinId);
+                Log.Ok($"Twin '{twinId}' deleted successfully!");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -351,10 +437,19 @@ namespace SampleClientApp
 
             string twinId = cmd[1];
             Log.Alert($"Submitting...");
-            Response<string> res = await client.GetDigitalTwinAsync(twinId);
-            if (res != null)
+            try
             {
-                LogResponse(res.Value);
+                Response<string> res = await client.GetDigitalTwinAsync(twinId);
+                if (res != null)
+                    LogResponse(res.Value);
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
             }
         }
 
@@ -388,9 +483,19 @@ namespace SampleClientApp
                     });
             }
             Log.Alert($"Submitting...");
-
-            await client.UpdateDigitalTwinAsync(twinId, JsonSerializer.Serialize(twinData));
-            Log.Ok($"Twin '{twinId}' updated successfully!");
+            try
+            {
+                await client.UpdateDigitalTwinAsync(twinId, JsonSerializer.Serialize(twinData));
+                Log.Ok($"Twin '{twinId}' updated successfully!");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
         /// <summary>
@@ -436,9 +541,19 @@ namespace SampleClientApp
             }
 
             Log.Out($"Submitting...");
-
-            await client.CreateRelationshipAsync(sourceTwinId, relationshipId, JsonSerializer.Serialize(relationship));
-            Log.Ok($"Relationship {relationshipId} of type {relationshipName} created successfully from {sourceTwinId} to {targetTwinId}!");
+            try
+            {
+                await client.CreateRelationshipAsync(sourceTwinId, relationshipId, JsonSerializer.Serialize(relationship));
+                Log.Ok($"Relationship {relationshipId} of type {relationshipName} created successfully from {sourceTwinId} to {targetTwinId}!");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
         /// <summary>
@@ -455,9 +570,19 @@ namespace SampleClientApp
             string relationshipName = cmd[2];
             string relationshipId = cmd[3];
             Log.Alert($"Submitting...");
-
-            await client.DeleteRelationshipAsync(sourceTwinId, relationshipId);
-            Log.Ok($"Relationship '{relationshipId}' for twin '{sourceTwinId}' of type '{relationshipName}' deleted successfully!");
+            try
+            {
+                await client.DeleteRelationshipAsync(sourceTwinId, relationshipId);
+                Log.Ok($"Relationship '{relationshipId}' for twin '{sourceTwinId}' of type '{relationshipName}' deleted successfully!");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
         /// <summary>
@@ -472,11 +597,21 @@ namespace SampleClientApp
             }
             string sourceTwinId = cmd[1];
             Log.Alert($"Submitting...");
-
-            AsyncPageable<string> res = client.GetRelationshipsAsync(sourceTwinId);
-            await foreach (string s in res)
+            try
             {
-                LogResponse(s);
+                AsyncPageable<string> res = client.GetRelationshipsAsync(sourceTwinId);
+                await foreach (string s in res)
+                {
+                    LogResponse(s);
+                }
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
             }
         }
 
@@ -494,11 +629,19 @@ namespace SampleClientApp
             string sourceTwinId = cmd[1];
             string relationshipId = cmd[2];
             Log.Alert($"Submitting...");
-
-            Response<string> res = await client.GetRelationshipAsync(sourceTwinId, relationshipId);
-            if (res != null)
+            try
             {
-                LogResponse(res.Value);
+                Response<string> res = await client.GetRelationshipAsync(sourceTwinId, relationshipId);
+                if (res != null)
+                    LogResponse(res.Value);
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
             }
         }
 
@@ -511,13 +654,23 @@ namespace SampleClientApp
             }
             string sourceTwinId = cmd[1];
             Log.Alert($"Submitting...");
-
-            AsyncPageable<IncomingRelationship> res = client.GetIncomingRelationshipsAsync(sourceTwinId);
-            await foreach (IncomingRelationship ie in res)
+            try
             {
-                Log.Ok($"Relationship: {ie.RelationshipName} from {ie.SourceId} | {ie.RelationshipId}");
+                AsyncPageable<IncomingRelationship> res = client.GetIncomingRelationshipsAsync(sourceTwinId);
+                await foreach (IncomingRelationship ie in res)
+                {
+                    Log.Ok($"Relationship: {ie.RelationshipName} from {ie.SourceId} | {ie.RelationshipId}");
+                }
+                Log.Out("--Completed--");
             }
-            Log.Out("--Completed--");
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
         /// <summary>
@@ -532,18 +685,26 @@ namespace SampleClientApp
             }
 
             string routeId = cmd[1];
+            var er = new EventRoute(cmd[2]);
+
             var sb = new StringBuilder();
             for (int i = 3; i < cmd.Length; i++)
-            {
                 sb.Append(cmd[i] + " ");
-            }
-
-            var er = new Azure.DigitalTwins.Core.EventRoute(cmd[2], sb.ToString());
-
+            er.Filter = sb.ToString();
             Log.Alert($"Submitting...");
-
-            await client.CreateEventRouteAsync(routeId, er);
-            Log.Ok("Command completed");
+            try
+            {
+                await client.CreateEventRouteAsync(routeId, er);
+                Log.Ok("Command completed");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
         /// <summary>
@@ -559,12 +720,23 @@ namespace SampleClientApp
 
             string routeId = cmd[1];
             Log.Alert($"Submitting...");
-
-            Response<EventRoute> res = await client.GetEventRouteAsync(routeId);
-            if (res != null && res.Value != null)
+            try
             {
-                Log.Out($"Route {res.Value.Id} to {res.Value.EndpointName}");
-                Log.Out($"  Filter: {res.Value.Filter}");
+                Response<EventRoute> res = await client.GetEventRouteAsync(routeId);
+                if (res != null && res.Value != null)
+                {
+                    Log.Out($"Route {res.Value.Id} to {res.Value.EndpointName}");
+                    Log.Out($"  Filter: {res.Value.Filter}");
+                }
+
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
             }
         }
 
@@ -574,12 +746,22 @@ namespace SampleClientApp
         public async Task CommandGetEventRoutes(string[] cmd)
         {
             Log.Alert($"Submitting...");
-
-            AsyncPageable<EventRoute> res = client.GetEventRoutesAsync();
-            await foreach (EventRoute er in res)
+            try
             {
-                Log.Out($"Route {er.Id} to {er.EndpointName}");
-                Log.Out($"  Filter: {er.Filter}");
+                AsyncPageable<EventRoute> res = client.GetEventRoutesAsync();
+                await foreach (EventRoute er in res)
+                {
+                    Log.Out($"Route {er.Id} to {er.EndpointName}");
+                    Log.Out($"  Filter: {er.Filter}");
+                }
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
             }
         }
 
@@ -596,23 +778,40 @@ namespace SampleClientApp
 
             string routeId = cmd[1];
             Log.Alert($"Submitting...");
-
-            await client.DeleteEventRouteAsync(routeId);
-            Log.Ok("Command completed");
+            try
+            {
+                await client.DeleteEventRouteAsync(routeId);
+                Log.Ok("Command completed");
+            }
+            catch (RequestFailedException e)
+            {
+                Log.Error($"Error {e.Status}: {e.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error: {ex}");
+            }
         }
 
         public async Task FindAndDeleteOutgoingRelationshipsAsync(string dtId)
         {
             // Find the relationships for the twin
 
-            // GetRelationshipsAsync will throw if an error occurs
-            AsyncPageable<string> relsJson = client.GetRelationshipsAsync(dtId);
-
-            await foreach (string relJson in relsJson)
+            try
             {
-                var rel = JsonSerializer.Deserialize<BasicRelationship>(relJson);
-                await client.DeleteRelationshipAsync(dtId, rel.Id);
-                Log.Ok($"Deleted relationship {rel.Id} from {dtId}");
+                // GetRelationshipsAsync will throw if an error occurs
+                AsyncPageable<string> relsJson = client.GetRelationshipsAsync(dtId);
+
+                await foreach (string relJson in relsJson)
+                {
+                    var rel = JsonSerializer.Deserialize<BasicRelationship>(relJson);
+                    await client.DeleteRelationshipAsync(dtId, rel.Id);
+                    Log.Ok($"Deleted relationship {rel.Id} from {dtId}");
+                }
+            }
+            catch (RequestFailedException ex)
+            {
+                Log.Error($"*** Error {ex.Status}/{ex.ErrorCode} retrieving or deleting relationships for {dtId} due to {ex.Message}");
             }
         }
 
@@ -620,13 +819,20 @@ namespace SampleClientApp
         {
             // Find the relationships for the twin
 
-            // GetRelationshipssAsync will throw if an error occurs
-            AsyncPageable<IncomingRelationship> incomingRels = client.GetIncomingRelationshipsAsync(dtId);
-
-            await foreach (IncomingRelationship incomingRel in incomingRels)
+            try
             {
-                await client.DeleteRelationshipAsync(incomingRel.SourceId, incomingRel.RelationshipId);
-                Log.Ok($"Deleted incoming relationship {incomingRel.RelationshipId} from {dtId}");
+                // GetRelationshipssAsync will throw if an error occurs
+                AsyncPageable<IncomingRelationship> incomingRels = client.GetIncomingRelationshipsAsync(dtId);
+
+                await foreach (IncomingRelationship incomingRel in incomingRels)
+                {
+                    await client.DeleteRelationshipAsync(incomingRel.SourceId, incomingRel.RelationshipId);
+                    Log.Ok($"Deleted incoming relationship {incomingRel.RelationshipId} from {dtId}");
+                }
+            }
+            catch (RequestFailedException ex)
+            {
+                Log.Error($"*** Error {ex.Status}/{ex.ErrorCode} retrieving or deleting incoming relationships for {dtId} due to {ex.Message}");
             }
         }
 
@@ -635,27 +841,33 @@ namespace SampleClientApp
             Log.Alert($"\nDeleting all twins");
             Log.Out($"Step 1: Find all twins", ConsoleColor.DarkYellow);
             List<string> twinList = new List<string>();
-
-            AsyncPageable<string> queryResult = client.QueryAsync("SELECT * FROM DIGITALTWINS");
-            await foreach (string item in queryResult)
+            try
             {
-                JsonDocument document = JsonDocument.Parse(item);
-                if (document.RootElement.TryGetProperty("$dtId", out JsonElement eDtdl))
+                AsyncPageable<string> queryResult = client.QueryAsync("SELECT * FROM DIGITALTWINS");
+                await foreach (string item in queryResult)
                 {
-                    try
+                    JsonDocument document = JsonDocument.Parse(item);
+                    if (document.RootElement.TryGetProperty("$dtId", out JsonElement eDtdl))
                     {
-                        string twinId = eDtdl.GetString();
-                        twinList.Add(twinId);
+                        try
+                        {
+                            string twinId = eDtdl.GetString();
+                            twinList.Add(twinId);
+                        }
+                        catch (Exception)
+                        {
+                            Log.Error("No DTDL property in query result");
+                        }
                     }
-                    catch (InvalidOperationException)
+                    else
                     {
-                        Log.Error("No DTDL property in query result");
+                        Log.Error($"Error: Can't find twin id in query result:\n {item}");
                     }
                 }
-                else
-                {
-                    Log.Error($"Error: Can't find twin id in query result:\n {item}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error in query execution: {ex.Message}");
             }
 
             Log.Out($"Step 2: Find and remove relationships for each twin...", ConsoleColor.DarkYellow);
@@ -669,8 +881,15 @@ namespace SampleClientApp
             Log.Out($"Step 3: Delete all twins", ConsoleColor.DarkYellow);
             foreach (string twinId in twinList)
             {
-                await client.DeleteDigitalTwinAsync(twinId);
-                Log.Out($"Deleted twin {twinId}");
+                try
+                {
+                    await client.DeleteDigitalTwinAsync(twinId);
+                    Log.Out($"Deleted twin {twinId}");
+                }
+                catch (RequestFailedException ex)
+                {
+                    Log.Error($"*** Error {ex.Status}/{ex.ErrorCode} deleting twin {twinId} due to {ex.Message}");
+                }
             }
         }
 
@@ -707,18 +926,21 @@ namespace SampleClientApp
             if (cmd.Length > 3)
             {
                 if (cmd[3] == "nosub")
-                {
                     recursive = false;
-                }
                 else
-                {
                     Log.Error("If you pass more than two parameters, the third parameter must be 'nosub' to skip recursive load");
-                }
             }
 
             DirectoryInfo dinfo;
-            dinfo = new DirectoryInfo(directory);
-
+            try
+            {
+                dinfo = new DirectoryInfo(directory);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Error accessing the target directory '{directory}': \n{e.Message}");
+                return;
+            }
             Log.Alert($"Loading *.{extension} files in folder '{dinfo.FullName}'.\nRecursive is set to {recursive}\n");
             if (dinfo.Exists == false)
             {
@@ -737,15 +959,21 @@ namespace SampleClientApp
                 Dictionary<FileInfo, string> modelDict = new Dictionary<FileInfo, string>();
                 int count = 0;
                 string lastFile = "<none>";
-
-                foreach (FileInfo fi in files)
+                try
                 {
-                    string dtdl = File.ReadAllText(fi.FullName);
-                    modelDict.Add(fi, dtdl);
-                    lastFile = fi.FullName;
-                    count++;
+                    foreach (FileInfo fi in files)
+                    {
+                        string dtdl = File.ReadAllText(fi.FullName);
+                        modelDict.Add(fi, dtdl);
+                        lastFile = fi.FullName;
+                        count++;
+                    }
                 }
-
+                catch (Exception e)
+                {
+                    Log.Error($"Could not read files. \nLast file read: {lastFile}\nError: \n{e.Message}");
+                    return;
+                }
                 Log.Ok($"Read {count} files from specified directory");
                 int errJson = 0;
                 foreach (FileInfo fi in modelDict.Keys)
@@ -755,9 +983,9 @@ namespace SampleClientApp
                     {
                         JsonDocument.Parse(dtdl);
                     }
-                    catch (Exception ex) when (ex is System.Text.Json.JsonException || ex is ArgumentException)
+                    catch (Exception e)
                     {
-                        Log.Error($"Invalid json found in file {fi.FullName}.\nJson parser error \n{ex.Message}");
+                        Log.Error($"Invalid json found in file {fi.FullName}.\nJson parser error \n{e.Message}");
                         errJson++;
                     }
                 }
@@ -778,10 +1006,18 @@ namespace SampleClientApp
                     Log.Ok($"**********************************************");
                     Log.Out($"Found a total of {om.Keys.Count()} entities in the DTDL");
 
-                    await client.CreateModelsAsync(modelList);
-                    Log.Ok($"**********************************************");
-                    Log.Ok($"** Models uploaded successfully **************");
-                    Log.Ok($"**********************************************");
+                    try
+                    {
+                        await client.CreateModelsAsync(modelList);
+                        Log.Ok($"**********************************************");
+                        Log.Ok($"** Models uploaded successfully **************");
+                        Log.Ok($"**********************************************");
+                    }
+                    catch (RequestFailedException ex)
+                    {
+                        Log.Error($"*** Error uploading models: {ex.Status}/{ex.ErrorCode}");
+                        return;
+                    }
                 }
                 catch (ParsingException pe)
                 {
@@ -844,16 +1080,23 @@ namespace SampleClientApp
         {
             TimerState ts = state as TimerState;
             if (ts == null || ts.IsActive == false)
-            {
                 return;
-            }
 
             for (int i = 0; i < ts.Arguments.Length; i += 2)
             {
-                Response<string> res0 = client.GetDigitalTwin(ts.Arguments[i]);
-                if (res0 != null)
+                try
                 {
-                    LogProperty(res0.Value, ts.Arguments[i + 1]);
+                    Response<string> res0 = client.GetDigitalTwin(ts.Arguments[i]);
+                    if (res0 != null)
+                        LogProperty(res0.Value, ts.Arguments[i + 1]);
+                }
+                catch (RequestFailedException e)
+                {
+                    Log.Error($"Error {e.Status}: {e.Message}");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Error: {ex}");
                 }
             }
         }
@@ -892,22 +1135,14 @@ namespace SampleClientApp
         public void LogResponse(string res, string type = "")
         {
             if (type != "")
-            {
                 Log.Alert($"{type}: \n");
-            }
             else
-            {
                 Log.Alert("Response:");
-            }
 
             if (res == null)
-            {
                 Log.Out("Null response");
-            }
             else
-            {
                 Console.WriteLine(PrettifyJson(res));
-            }
         }
 
         // Log temperature changes in sample app
@@ -916,14 +1151,10 @@ namespace SampleClientApp
             var obj = JsonSerializer.Deserialize<Dictionary<string, object>>(res);
 
             if (!obj.TryGetValue("$dtId", out object dtid))
-            {
                 dtid = "<$dtId not found>";
-            }
 
             if (!obj.TryGetValue(propName, out object value))
-            {
                 value = "<property not found>";
-            }
 
             Console.WriteLine($"$dtId: {dtid}, {propName}: {value}");
         }
@@ -1040,44 +1271,24 @@ namespace SampleClientApp
             Log.Out("");
             while (true)
             {
-                Log.Alert("\nPlease enter a command or 'help'. Commands are not case sensitive");
-                string command = Console.ReadLine().Trim();
-                string[] commandArr = SplitArgs(command);
-                string verb = commandArr[0].ToLower();
-                if (!string.IsNullOrEmpty(verb))
+                try
                 {
-                    Func<string[], Task> cmd;
-                    try
+                    Log.Alert("\nPlease enter a command or 'help'. Commands are not case sensitive");
+                    string command = Console.ReadLine().Trim();
+                    string[] commandArr = SplitArgs(command);
+                    string verb = commandArr[0].ToLower();
+                    if (!string.IsNullOrEmpty(verb))
                     {
-                        cmd = commands
+                        var cmd = commands
                             .Where(p => p.Key.ToLower() == verb)
                             .Select(p => p.Value.Command)
                             .Single();
-                    }
-                    catch (InvalidOperationException)
-                    {
-                        Log.Error($"Invalid command. Please type 'help' for more information.");
-                        continue;
-                    }
-
-                    try
-                    {
                         await cmd(commandArr);
                     }
-                    catch (AuthenticationFailedException e)
-                    {
-                        Log.Error($"Authentication failed: {e.Message}.");
-                        Log.Alert($"Refer to https://github.com/Azure/azure-sdk-for-net/blob/Azure.Identity_1.2.1/sdk/identity/Azure.Identity/README.md#authenticate-the-client on how to authenticate to Azure.");
-                        return;
-                    }
-                    catch (RequestFailedException e)
-                    {
-                        Log.Error($"Command '{verb}' failed calling ADT API with error {e.Status}: {e.Message}");
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error($"Command '{verb}' failed with an unexpected error.\n\nException message: {e.Message}");
-                    }
+                }
+                catch (Exception)
+                {
+                    Log.Error("Invalid command. Please type 'help' for more information.");
                 }
             }
         }
@@ -1097,9 +1308,7 @@ namespace SampleClientApp
                 {
                     string[] parts = segments[i].Split(new char[] { }, StringSplitOptions.RemoveEmptyEntries);
                     foreach (string ps in parts)
-                    {
                         elements.Add(ps.Trim());
-                    }
                 }
                 else
                 {
