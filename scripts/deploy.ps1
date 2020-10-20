@@ -14,6 +14,9 @@
 
     .PARAMETER endToEnd
 
+    .PARAMETER RegisterAadApp
+        While creating the ADT instance this script can optionally create an Azure Active Directory app registration that can be used to enable authentication for various types of applications.
+
     .EXAMPLE
         ./deploy.ps1
 
@@ -27,9 +30,11 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$false)]
-    [switch]
-    $endToEnd = $false
+    [Parameter(Mandatory=$False)]
+    [switch]$endToEnd = $False,
+
+    [Parameter(Mandatory=$False)]
+    [switch]$RegisterAadApp
 )
 
 function Write-ManifestFile {
@@ -285,41 +290,43 @@ if ($result){
     Start-Sleep -Seconds $cooloff
 }
 
-#create aad app
-$display_name = ""
-if (Get-Member -InputObject $config -Name "display_name" -MemberType Properties) {
-    $display_name = $config.display_name
-} else {
-    $config | Add-Member -Name "display_name" -Value "" -MemberType NoteProperty
-}
-
-while ([string]::IsNullOrEmpty($display_name)) {
-    $display_name = Read-Host "Please specify your AAD application display name"
-}
-$config.display_name = $display_name
-
-Write-Host "Searching for existing Azure Active Directory application: " -ForegroundColor DarkGray -NoNewline
-Write-Host "'az ad app list --display-name $display_name'" -ForegroundColor Yellow
-$application_id = (az ad app list --display-name $display_name --query '[0].appId' -o json --only-show-errors 2>$null) | ConvertFrom-Json
-if(!$application_id) {
-    # we need to create it
-    Write-ManifestFile
-    $reply_url = ""
-    if (Get-Member -InputObject $config -Name "reply_url" -MemberType Properties) {
-        $reply_url = $config.reply_url
+if ($registerAadApp) {
+    #create aad app
+    $display_name = ""
+    if (Get-Member -InputObject $config -Name "display_name" -MemberType Properties) {
+        $display_name = $config.display_name
     } else {
-        $config | Add-Member -Name "reply_url" -Value "" -MemberType NoteProperty
+        $config | Add-Member -Name "display_name" -Value "" -MemberType NoteProperty
     }
-    while ([string]::IsNullOrEmpty($reply_url)) {
-        $reply_url = Read-Host "Please specify your AAD application reply url"
-    }
-    $config.reply_url = $reply_url
 
-    Write-Host "Creating AAD application registration: " -ForegroundColor DarkGray -NoNewline
-    Write-Host "'az ad app create --display-name $display_name --native-app --required-resource-accesses ./manifest.json --reply-url $reply_url'" -ForegroundColor Yellow
-    (az ad app create --display-name $display_name --native-app --required-resource-accesses ./manifest.json --reply-url $reply_url -o json --only-show-errors 2>$null)
+    while ([string]::IsNullOrEmpty($display_name)) {
+        $display_name = Read-Host "Please specify your AAD application display name"
+    }
+    $config.display_name = $display_name
+
+    Write-Host "Searching for existing Azure Active Directory application: " -ForegroundColor DarkGray -NoNewline
+    Write-Host "'az ad app list --display-name $display_name'" -ForegroundColor Yellow
+    $application_id = (az ad app list --display-name $display_name --query '[0].appId' -o json --only-show-errors 2>$null) | ConvertFrom-Json
+    if(!$application_id) {
+        # we need to create it
+        Write-ManifestFile
+        $reply_url = ""
+        if (Get-Member -InputObject $config -Name "reply_url" -MemberType Properties) {
+            $reply_url = $config.reply_url
+        } else {
+            $config | Add-Member -Name "reply_url" -Value "" -MemberType NoteProperty
+        }
+        while ([string]::IsNullOrEmpty($reply_url)) {
+            $reply_url = Read-Host "Please specify your AAD application reply url"
+        }
+        $config.reply_url = $reply_url
+
+        Write-Host "Creating AAD application registration: " -ForegroundColor DarkGray -NoNewline
+        Write-Host "'az ad app create --display-name $display_name --native-app --required-resource-accesses ./manifest.json --reply-url $reply_url'" -ForegroundColor Yellow
+        (az ad app create --display-name $display_name --native-app --required-resource-accesses ./manifest.json --reply-url $reply_url -o json --only-show-errors 2>$null)
+    }
+    $config | ConvertTo-Json -Depth 100 | Out-File $configFile
 }
-$config | ConvertTo-Json -Depth 100 | Out-File $configFile
 
 if ($endToEnd) {
     #create iot hub

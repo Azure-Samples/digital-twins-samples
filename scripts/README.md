@@ -10,7 +10,7 @@ description: Script for deploying Azure Digital Twins and associated resources u
 
 # Use automated script to deploy Azure Digital Twins
 
-*Deploy.ps1* is an Azure Digital Twins code sample that can be used to deploy an Azure Digital Twins instance, including setting up required Azure AD permissions. It can also be used to set up additional Azure resources to be used along with Azure Digital Twins in an end-to-end solution.
+*Deploy.ps1* is an Azure Digital Twins code sample that can be used to deploy an Azure Digital Twins instance and grant the current user the _Azure Digital Twins Owner (Preview)_ management role on the instance. It can also be used to set up an Azure AD app registration, and additional Azure resources to be used along with Azure Digital Twins in an end-to-end solution.
 
 You can use the script directly to deploy resources, or reference it as a starting point for writing your own scripted interactions.
 
@@ -66,20 +66,27 @@ The *deploy.ps1* script can be run in two modes. use either of the commands belo
 
 * Run command: `.\deploy.ps1`
 
-    This mode of the script is intended to completely deploy an Azure Digital Twins instance, including setting up the required permissions. It accompanies the following documentation: [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted).
+    This mode of the script is intended to completely deploy an Azure Digital Twins instance, including setting up the required role assignment. It accompanies the following documentation: [*How-to: Set up an instance and authentication (scripted)*](https://docs.microsoft.com/azure/digital-twins/how-to-set-up-instance-scripted).
 
     Running the script in this mode creates the following resources:
     - A resource group
     - An Azure Digital Twins instance
     - A role assignment of *Azure Digital Twins Owner (Preview)* on the Azure Digital Twins instance for the user that's signed into Cloud Shell. *For potential difficulty with this step, see [Known issues](#known-issues) section below.*
-    - An Azure Active Directory application registration for client apps that need to authenticate to the Azure Digital Twins APIs
+
+* Run command: `.\deploy.ps1 -RegisterAadApp`
+
+    This is a switch that can be added to create additional resources. In addition to everything completed by the first mode, this mode of the script sets up an Azure Active Directory app registration that can be used with some authentication methods for client apps to access the Azure Digital Twins APIs.
+
+    Running the script in this mode creates the following resources:
+    - Everything from the first mode of the script (resource group, instance, role assignment)
+    - An Azure Active Directory application registration for client apps that want to use one to authenticate to the Azure Digital Twins APIs
 
 * Run command: `.\deploy.ps1 -endtoend`
 
-    In addition to everything completed by the first mode, this mode of the script is intended to set up additional Azure resources that can be used along with your Azure Digital Twins instance to set up an end-to-end solution with live data flow. It accompanies the following documentation: [*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code).
+    This is a switch that can be added to create additional resources. In addition to everything completed by the first mode, this mode of the script is intended to set up additional Azure resources that can be used along with your Azure Digital Twins instance to set up an end-to-end solution with live data flow. It accompanies the following documentation: [*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code).
 
     Running the script in this mode creates the following resources:
-    - Everything from the first mode of the script (resource group, instance, role assignment, app registration)
+    - Everything from the first mode of the script (resource group, instance, role assignment)
     - An IoT hub
     - An Event Grid topic
     - An Event Grid endpoint in the Azure Digital Twins instance
@@ -93,7 +100,9 @@ The *deploy.ps1* script can be run in two modes. use either of the commands belo
     - An Event Grid subscription for data processing. *For potential difficulty with this step, see [Known issues](#known-issues) section below.*
 
 >[!NOTE]
->At this time, the tutorial that accompanies the script's `-endtoend` mode ([*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code)) does not officially rely on the script as part of the tutorial flow. Instead, the tutorial document includes steps to set up each of these resources manually. You can use the script and tutorial instructions together to compile your solution as you see fit.
+>The tutorial that accompanies the script's `-endtoend` mode ([*Tutorial: Connect an end-to-end solution*](https://docs.microsoft.com/azure/digital-twins/tutorial-code)) does not rely on the script as part of the tutorial flow. Instead, the tutorial document includes steps to set up each of these resources manually. You can use the script and tutorial instructions together to build a custom solution as you see fit.
+
+* You can also use both of the switches together (`.\deploy.ps1 -RegisterAadApp -endtoend`) to create all possible resources available in the script.
 
 ## Re-running the sample
 
