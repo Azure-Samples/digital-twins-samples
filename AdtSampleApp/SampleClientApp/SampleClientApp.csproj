@@ -15,8 +15,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-<PackageReference Include="Azure.DigitalTwins.Core" Version="1.0.0-alpha.20201028.1" />
-<PackageReference Include="Azure.Identity" Version="1.2.3" />
+    <!-- This pre-GA package version is available at https://dev.azure.com/azure-sdk/public/_packaging?_a=package&feed=azure-sdk-for-net&view=overview&package=Azure.DigitalTwins.Core&version=1.0.0-alpha.20201030.1&protocolType=NuGet -->
+    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.0.0-alpha.20201030.1" />
+    <PackageReference Include="Azure.Identity" Version="1.2.3" />
     <PackageReference Include="Microsoft.Azure.DigitalTwins.Parser" Version="3.12.5" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.9" />
   </ItemGroup>

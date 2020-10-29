@@ -1,9 +1,6 @@
 ﻿using Azure;
 using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 
 namespace SampleFunctionsApp
@@ -40,12 +37,10 @@ namespace SampleFunctionsApp
 
             try
             {
-                AsyncPageable<string> res = client.QueryAsync(query);
-
-                await foreach (string s in res)
+                AsyncPageable<BasicDigitalTwin> twins = client.QueryAsync<BasicDigitalTwin>(query);
+                await foreach (BasicDigitalTwin twin in twins)
                 {
-                    JObject parentTwin = (JObject)JsonConvert.DeserializeObject(s);
-                    return (string)parentTwin["Parent"]["$dtId"];
+                    return twin.Id;
                 }
                 log.LogWarning($"*** No parent found");
             }

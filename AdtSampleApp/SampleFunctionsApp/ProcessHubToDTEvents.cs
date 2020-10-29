@@ -1,9 +1,6 @@
-using System;
-using System.Net.Http;
 using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
 using Azure.Identity;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
@@ -11,6 +8,8 @@ using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Net.Http;
 
 namespace SampleFunctionsApp
 {
