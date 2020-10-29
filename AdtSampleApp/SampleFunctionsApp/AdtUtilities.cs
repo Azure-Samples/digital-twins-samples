@@ -61,12 +61,11 @@ namespace SampleFunctionsApp
             // If the twin does not exist, this will log an error
             try
             {
-                var uou = new UpdateOperationsUtility();
-                uou.AppendReplaceOp(propertyPath, value);
-                string patchPayload = uou.Serialize();
-                log.LogInformation($"UpdateTwinPropertyAsync sending {patchPayload}");
+                var updateTwinData = new JsonPatchDocument();
+                updateTwinData.AppendAdd(propertyPath, value);
 
-                await client.UpdateDigitalTwinAsync(twinId, patchPayload);
+                log.LogInformation($"UpdateTwinPropertyAsync sending {updateTwinData}");
+                await client.UpdateDigitalTwinAsync(twinId, updateTwinData);
             }
             catch (RequestFailedException exc)
             {

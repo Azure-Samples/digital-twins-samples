@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
 using Azure.DigitalTwins.Core.Serialization;
@@ -46,9 +47,9 @@ namespace SampleFunctionsApp
                 log.LogInformation($"Device:{deviceId} Temperature is:{temperature}");
 
                 //Update twin using device temperature
-                var uou = new UpdateOperationsUtility();
-                uou.AppendReplaceOp("/Temperature", temperature.Value<double>());
-                await client.UpdateDigitalTwinAsync(deviceId, uou.Serialize());
+                var updateTwinData = new JsonPatchDocument();
+                updateTwinData.AppendAdd("/Temperature", temperature.Value<double>());
+                await client.UpdateDigitalTwinAsync(deviceId, updateTwinData);
             }
         }
     }
