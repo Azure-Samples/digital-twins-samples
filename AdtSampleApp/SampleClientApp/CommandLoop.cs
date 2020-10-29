@@ -1,6 +1,5 @@
 ﻿using Azure;
 using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
 using Microsoft.Azure.DigitalTwins.Parser;
 using System;
 using System.Collections.Generic;
@@ -54,10 +53,10 @@ namespace SampleClientApp
                     r.Close();
                     dtdlList.Add(dtdl);
                 }
-                Response<ModelData[]> res = await client.CreateModelsAsync(dtdlList);
+                Response<DigitalTwinsModelData[]> res = await client.CreateModelsAsync(dtdlList);
                 Log.Ok($"Model(s) created successfully!");
-                foreach (ModelData md in res.Value)
-                    LogResponse(md.Model);
+                foreach (DigitalTwinsModelData md in res.Value)
+                    LogResponse(md.DtdlModel);
             }
             catch (RequestFailedException e)
             {
@@ -121,13 +120,18 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                var reslist = new List<ModelData>();
-                AsyncPageable<ModelData> results = client.GetModelsAsync(dependenciesFor, includeModelDefinitions);
-                await foreach (ModelData md in results)
+                AsyncPageable<DigitalTwinsModelData> results = client.GetModelsAsync(
+                    new GetModelsOptions
+                    {
+                        DependenciesFor = dependenciesFor,
+                        IncludeModelDefinition = includeModelDefinitions
+                    });
+                var reslist = new List<DigitalTwinsModelData>();
+                await foreach (DigitalTwinsModelData md in results)
                 {
                     Log.Out(md.Id);
-                    if (md.Model != null)
-                        LogResponse(md.Model);
+                    if (md.DtdlModel != null)
+                        LogResponse(md.DtdlModel);
                     reslist.Add(md);
                 }
                 Log.Out("");
@@ -157,8 +161,8 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                Response<ModelData> res = await client.GetModelAsync(modelId);
-                LogResponse(res.Value.Model);
+                Response<DigitalTwinsModelData> res = await client.GetModelAsync(modelId);
+                LogResponse(res.Value.DtdlModel);
             }
             catch (RequestFailedException e)
             {
@@ -206,14 +210,14 @@ namespace SampleClientApp
             try
             {
                 var reslist = new List<string>();
-                AsyncPageable<ModelData> results = client.GetModelsAsync(null, true);
-                await foreach (ModelData md in results)
+                AsyncPageable<DigitalTwinsModelData> results = client.GetModelsAsync(new GetModelsOptions { IncludeModelDefinition = true });
+                await foreach (DigitalTwinsModelData md in results)
                 {
                     Log.Out(md.Id);
-                    if (md.Model != null)
+                    if (md.DtdlModel != null)
                     {
                         Log.Out(md.Id);
-                        reslist.Add(md.Model);
+                        reslist.Add(md.DtdlModel);
                     }
                 }
                 Log.Out("");
@@ -377,13 +381,13 @@ namespace SampleClientApp
 
             for (int i = 0; i < args.Length; i += 3)
             {
-                twinData.CustomProperties.Add(args[i], ConvertStringToType(args[i + 1], args[i + 2]));
+                twinData.Contents.Add(args[i], ConvertStringToType(args[i + 1], args[i + 2]));
             }
             Log.Alert($"Submitting...");
 
             try
             {
-                await client.CreateDigitalTwinAsync(twinData.Id, JsonSerializer.Serialize(twinData));
+                await client.CreateOrReplaceDigitalTwinAsync<BasicDigitalTwin>(twinData.Id, twinData);
                 Log.Ok($"Twin '{twinId}' created successfully!");
             }
             catch (RequestFailedException e)
@@ -439,9 +443,9 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                Response<string> res = await client.GetDigitalTwinAsync(twinId);
+                Response<BasicDigitalTwin> res = await client.GetDigitalTwinAsync<BasicDigitalTwin>(twinId);
                 if (res != null)
-                    LogResponse(res.Value);
+                    LogResponse(System.Text.Json.JsonSerializer.Serialize(res.Value));
             }
             catch (RequestFailedException e)
             {
@@ -471,21 +475,29 @@ namespace SampleClientApp
                 return;
             }
 
-            var twinData = new List<object>();
+            var updateTwinData = new JsonPatchDocument();
             for (int i = 0; i < args.Length; i += 4)
             {
-                twinData.Add(
-                    new Dictionary<string, object>
-                    {
-                        { "op", args[i] },
-                        { "path", args[i + 1] },
-                        { "value", ConvertStringToType(args[i + 2], args[i + 3]) }
-                    });
+                switch (args[i])
+                {
+                    case "add":
+                        updateTwinData.AppendAdd(args[i + 1], ConvertStringToType(args[i + 2], args[i + 3]));
+                        break;
+
+                    case "replace":
+                        updateTwinData.AppendReplace(args[i + 1], ConvertStringToType(args[i + 2], args[i + 3]));
+                        break;
+
+                    case "remove":
+                        updateTwinData.AppendRemove(args[i + 1]);
+                        break;
+                }
             }
+
             Log.Alert($"Submitting...");
             try
             {
-                await client.UpdateDigitalTwinAsync(twinId, JsonSerializer.Serialize(twinData));
+                await client.UpdateDigitalTwinAsync(twinId, updateTwinData);
                 Log.Ok($"Twin '{twinId}' updated successfully!");
             }
             catch (RequestFailedException e)
@@ -536,14 +548,14 @@ namespace SampleClientApp
             {
                 for (int i = 0; i < args.Length; i += 3)
                 {
-                    relationship.CustomProperties.Add(args[i], ConvertStringToType(args[i + 1], args[i + 2]));
+                    relationship.Properties.Add(args[i], ConvertStringToType(args[i + 1], args[i + 2]));
                 }
             }
 
             Log.Out($"Submitting...");
             try
             {
-                await client.CreateRelationshipAsync(sourceTwinId, relationshipId, JsonSerializer.Serialize(relationship));
+                await client.CreateOrReplaceRelationshipAsync(sourceTwinId, relationshipId, relationship);
                 Log.Ok($"Relationship {relationshipId} of type {relationshipName} created successfully from {sourceTwinId} to {targetTwinId}!");
             }
             catch (RequestFailedException e)
@@ -631,9 +643,9 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                Response<string> res = await client.GetRelationshipAsync(sourceTwinId, relationshipId);
+                Response<BasicRelationship> res = await client.GetRelationshipAsync<BasicRelationship>(sourceTwinId, relationshipId);
                 if (res != null)
-                    LogResponse(res.Value);
+                    LogResponse(JsonSerializer.Serialize(res.Value));
             }
             catch (RequestFailedException e)
             {
@@ -685,7 +697,7 @@ namespace SampleClientApp
             }
 
             string routeId = cmd[1];
-            var er = new EventRoute(cmd[2]);
+            var er = new DigitalTwinsEventRoute(cmd[2], null);
 
             var sb = new StringBuilder();
             for (int i = 3; i < cmd.Length; i++)
@@ -694,7 +706,7 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                await client.CreateEventRouteAsync(routeId, er);
+                await client.CreateOrReplaceEventRouteAsync(routeId, er);
                 Log.Ok("Command completed");
             }
             catch (RequestFailedException e)
@@ -722,7 +734,7 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                Response<EventRoute> res = await client.GetEventRouteAsync(routeId);
+                Response<DigitalTwinsEventRoute> res = await client.GetEventRouteAsync(routeId);
                 if (res != null && res.Value != null)
                 {
                     Log.Out($"Route {res.Value.Id} to {res.Value.EndpointName}");
@@ -748,8 +760,8 @@ namespace SampleClientApp
             Log.Alert($"Submitting...");
             try
             {
-                AsyncPageable<EventRoute> res = client.GetEventRoutesAsync();
-                await foreach (EventRoute er in res)
+                AsyncPageable<DigitalTwinsEventRoute> res = client.GetEventRoutesAsync();
+                await foreach (DigitalTwinsEventRoute er in res)
                 {
                     Log.Out($"Route {er.Id} to {er.EndpointName}");
                     Log.Out($"  Filter: {er.Filter}");
@@ -1086,9 +1098,9 @@ namespace SampleClientApp
             {
                 try
                 {
-                    Response<string> res0 = client.GetDigitalTwin(ts.Arguments[i]);
+                    Response<BasicDigitalTwin> res0 = client.GetDigitalTwin<BasicDigitalTwin>(ts.Arguments[i]);
                     if (res0 != null)
-                        LogProperty(res0.Value, ts.Arguments[i + 1]);
+                        LogProperty(JsonSerializer.Serialize(res0.Value), ts.Arguments[i + 1]);
                 }
                 catch (RequestFailedException e)
                 {
