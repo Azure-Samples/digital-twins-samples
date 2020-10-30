@@ -1,8 +1,6 @@
-using System;
-using System.Net.Http;
+using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
 using Azure.Identity;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
@@ -10,6 +8,8 @@ using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
+using System.Net.Http;
 
 namespace SampleFunctionsApp
 {
@@ -46,9 +46,9 @@ namespace SampleFunctionsApp
                 log.LogInformation($"Device:{deviceId} Temperature is:{temperature}");
 
                 //Update twin using device temperature
-                var uou = new UpdateOperationsUtility();
-                uou.AppendReplaceOp("/Temperature", temperature.Value<double>());
-                await client.UpdateDigitalTwinAsync(deviceId, uou.Serialize());
+                var updateTwinData = new JsonPatchDocument();
+                updateTwinData.AppendAdd("/Temperature", temperature.Value<double>());
+                await client.UpdateDigitalTwinAsync(deviceId, updateTwinData);
             }
         }
     }

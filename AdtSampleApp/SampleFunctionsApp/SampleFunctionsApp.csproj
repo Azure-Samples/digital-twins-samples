@@ -4,7 +4,8 @@
     <AzureFunctionsVersion>v3</AzureFunctionsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.0.0-preview.3" />
+    <!-- This pre-GA package version is available at https://dev.azure.com/azure-sdk/public/_packaging?_a=package&feed=azure-sdk-for-net&view=overview&package=Azure.DigitalTwins.Core&version=1.0.0-alpha.20201030.1&protocolType=NuGet -->
+    <PackageReference Include="Azure.DigitalTwins.Core" Version="1.0.0-alpha.20201030.1" />
     <PackageReference Include="Azure.Identity" Version="1.2.3" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.6.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid" Version="2.1.0" />
