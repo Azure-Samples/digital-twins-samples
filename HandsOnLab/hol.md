@@ -1,10 +1,30 @@
-# Setup ADT
+# Azure Digital Twins Hands On Lab
+
+## Overview
+Suppose you work at a Chocolate Manufacturing Factory as Technical Specialist to support The Chocolate Factory line operators. You are commissioned to launch a new near real-time dashboard to support operators monitor running operations for the Roasting, Grinding and Molding processes to answer questions such as: 
+•	find all time windows when temperature during roasting is >150°F in the previous 24 hours and trace back events in ADT leading to that
+•	Calculate the average Grinding vibration in the last 2 minutes to ensure the process meets manufacturing quality standards
+•	Find all incidents with unusually higher than normal molding temperature in the previous 5 days
+
+Also, you may need to gather historical data that can be used for postmortem root-cause analysis when all operations fail, correct the problem and set up a better notification system for these incidents.
+![Chocolate Factory](./images/chocofactoryprocess.png)
+
+## Architecture
+In this HOL, you will be setting up the end-to-end-architecture below.
+![Architecture](./images/hol-architecture.png)
+## Prerequisites
+
+- Azure Subcription
+- Admin Access to Azure AD Tenant & Azure Subscription
+- [Azure Command Line Interface (CLI)](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+    - Recommend installing AZ CLI locally as the Azure Cloud Shell will timeout due to the length of the lab
+    
 ## Setup variables
 First, we'll need to create and store some variables in the Azure Cloud Shell. This will make running the commands needed in the subsequent units easier and avoid mistakes from typos.
 
-1. Make sure that you've activated the sandbox using the button above. The sandbox will allow us to create the necessary resources without incurring any charges.
-1. If you're running this outside of the MSLearn environment, make sure the CLI is set to **Bash**
-1. Setup the variables that will be used by the commands in the rest of this module. Copy and paste the following into the CLI.
+1. 
+1. make sure the CLI is set to **Bash**
+1. Copy and paste the following into the CLI.
 
 
 ```azurecli
