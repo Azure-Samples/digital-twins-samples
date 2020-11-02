@@ -445,3 +445,36 @@ namespace SampleFunctionsApp
 }
 
 ```
+### Create and connect a Time Series Insights instance
+
+# Provision Time Series Insights
+storage=adtholtsitorage$RANDOM
+az storage account create -g $rgname -n $storage --https-only
+key=$(az storage account keys list -g $rgname -n $storage --query [0].value --output tsv)
+az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties "\$dtId" --storage-account-name $storage --storage-management-key $key
+
+## Configure Event Hub as an Event Source
+es_resource_id=$(az eventhubs eventhub show -n tsi-event-hub -g $rgname --namespace $dtname --query id -o tsv)
+shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $dtname -n RootManageSharedAccessKey --query primaryKey --output tsv | sed -e 's/\r//g')
+az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name "\$Default"
+
+## Configure permissions to access TSI environment
+id=$(az ad user show --id teodelas@microsoft.com --query objectId -o tsv | sed -e 's/\r//g')
+az timeseriesinsights access-policy create -g $rgname --environment-name $tsiname -n access1 --principal-object-id $id  --description "some description" --roles Contributor Reader
+
+## View Data
+Now, data should be flowing into your Time Series Insights instance, ready to be an-alyzed. Follow the steps below to explore the data coming in.
+1.	Open your Time Series Insights instance in the Azure portal (you can search for the name of your instance in the portal search bar). Visit the Time Series Insights Explorer URL shown in the instance overview.
+  
+1.	In the explorer, you will see your three twins from Azure Digital Twins shown on the left. Select vibrationsensorxx, select vibration, and hit add.
+
+1.	You should now be seeing the initial temperature readings from your vibra-tion sensor, as shown below. That same temperature reading is updated for sensor2 and machine1, and you can visualize those data streams in tan-dem
+
+ 
+ 
+
+
+
+1.	If you allow the simulation to run for much longer, your visualization will look something like this:
+ 
+
