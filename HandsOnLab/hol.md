@@ -17,13 +17,15 @@ In this HOL, you will be setting up the end-to-end-architecture below.
 - Azure Subcription
 - Admin Access to Azure AD Tenant & Azure Subscription
 - [Azure Command Line Interface (CLI)](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
-    - Recommend installing AZ CLI locally as the Azure Cloud Shell will timeout due to the length of the lab
+    - Recommend installing AZ CLI locally
+    - Do not recommend using the Azure Cloud Shell as it will timeout due to the length of the lab
     
-## Setup variables
+## Lab Setup
+
+### Setup Variables
 First, we'll need to create and store some variables in the Azure Cloud Shell. This will make running the commands needed in the subsequent units easier and avoid mistakes from typos.
 
-1. 
-1. make sure the CLI is set to **Bash**
+1. If you're using the Azure Cloud Shell (not recommended) make sure the CLI is set to **Bash**
 1. Copy and paste the following into the CLI.
 
 
@@ -32,6 +34,7 @@ rgname=adthol-$RANDOM
 dtname=$rgname
 location=eastus
 username=<account used to log into azure>
+functionstorage=$rgname-functionstorage
 telemetryfunctionname=$rgname-telemetryfunction
 twinupdatefunctionname=$rgname-twinupdatefunction
 
@@ -41,6 +44,7 @@ echo $location
 echo $username
 echo $telemetryfunctionname
 echo $twinupdatefunctionname
+echo $functionstorage
 ```
 > [!NOTE]
 >
@@ -132,11 +136,11 @@ We can ingest data into Azure Digital Twins through external compute resources, 
 ### Create an Azure Function via CLI
 1. Create a Azure storage account
     ```azurecli
-    az storage account create --name $telemetryfunctionname --location $location --resource-group $rgname --sku Standard_LRS
+    az storage account create --name $functionstorage --location $location --resource-group $rgname --sku Standard_LRS
     ```
 1. Create an Azure Function
     ```azurecli
-    az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $telemetryfunctionname --storage-account $telemetryfunctionname
+    az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $telemetryfunctionname --storage-account $functionstorage
     ```
 ### Configure security access for the Azure function app
 The Azure function skeleton from earlier examples requires that a bearer token to be passed in order to authenticate with Azure Digital Twins. To make sure that this bearer token is passed, you'll need to create a [Managed Service Identity (MSI)](../active-directory/managed-identities-azure-resources/overview.md) for the function app.
@@ -263,7 +267,7 @@ namespace My.Function
 1. In the VSCode function extension, click on on **Deploy to Function App...**
     ![Choose Deploy to Function App](./images/deploy-to-function-app.png)
 - **Select subscription**: Choose `Concierge Subscription` if you're using the sandbox environment
-- **Select Function App in Azure**: Choose `<name>twinfunction`.
+- **Select Function App in Azure**: Choose the function ending with `telemetryfunction`.
 
 1. When the deployment finishes, you'll be prompted to Start Streaming Logs
   ![Stream Logs](./images/function-stream-logs.png)
@@ -308,7 +312,7 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 az iot device simulate -d thermostat67 -n $dtname --data '{ "Temperature": 67.3 }' --msg-count 1
 ```
 
-## Validate Azure Digital Twin is receiving data
+### Validate Azure Digital Twin is receiving data
 1. You can see the values in being updated in the Twin Thermostat67 by running the following command
 ```azurecli
  az dt twin show -n $dtname --twin-id thermostat67
@@ -344,7 +348,7 @@ az iot device simulate -d thermostat67 -n $dtname --data '{ "Temperature": 67.3 
 1. Create an Azure Function
     
 ```azurecli
-    az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $twinupdatefunctionname --storage-account  $storagename
+    az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $twinupdatefunctionname --storage-account  $functionstorage
   ```
 
 1. Add application config that stores the connection strings needed by the Azure Function
@@ -371,7 +375,7 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
     - **Select a language for your function project**: Choose `C#`.
     - **Select a template for your project's first function**: Choose `EventHubTrigger`.
     - **Provide a function name**: Type `TwinsFunction`.
-    - **Provide a namespace**: Type `SampleFunctionApp`.
+    - **Provide a namespace**: Type `SampleFunctionsApp`.
     - **Select setting from local.settings.json**: Hit Enter
     - **Select subscription**: Select the subscription you're using
     - **Select an event hub namespace**: Choose the namespace created above
