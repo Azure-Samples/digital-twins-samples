@@ -70,13 +70,13 @@ $functionstorage
     az dt role-assignment create -n $dtname -g $rgname --role "Azure Digital Twins Data Owner" --assignee $username -o json
     ```
 ### Collect instance values
->[!NOTE] Save These values for use later
+>[!NOTE] Save these outputs below to notepad for use later
 >
 1. Get the hostname of the Digital Twins instance. Copy the output to notepad for use later.
     ```azurecli
     az dt show -n $dtname --query 'hostName'
     ```
-### Collect app registration values
+### Collect Azure AD tenant values
 1. Get the Azure Active Directory (AAD) Tennant ID
     ```azurecli
     az account show --query 'tenantId'
@@ -136,46 +136,50 @@ Output of a successful twin create command should look like this:
 ## Setup Function to Ingest Events from IoT Hub
 We can ingest data into Azure Digital Twins through external compute resources, such as an Azure function, that receives the data and uses the DigitalTwins APIs to set properties.
 
-### Configure your environment
-- [Visual Studio Code](https://code.visualstudio.com/) on one of the [supported platforms](https://code.visualstudio.com/docs/supporting/requirements#_platforms).
-- The [C# extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp) for Visual Studio Code.
-- The [Azure Functions extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions) for Visual Studio Code.
-
 ### Create an Azure Function via CLI
+
 1. Create a Azure storage account
+
     ```azurecli
     az storage account create --name $functionstorage --location $location --resource-group $rgname --sku Standard_LRS
     ```
+
 1. Create an Azure Function
+
     ```azurecli
     az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $telemetryfunctionname --storage-account $functionstorage
     ```
+
 ### Configure security access for the Azure function app
+
 The Azure function skeleton from earlier examples requires that a bearer token to be passed in order to authenticate with Azure Digital Twins. To make sure that this bearer token is passed, you'll need to create a [Managed Service Identity (MSI)](../active-directory/managed-identities-azure-resources/overview.md) for the function app.
 
 In this section, we'll create a system-managed identity and assign the function app's identity to the _Azure Digital Twins Owner (Preview)_ role for your Azure Digital Twins instance. The Managed Identity gives the function app permission in the instance to perform data plane activities. We'll also provide the the URL of Azure Digital Twins instance to the function by setting an environment variable.
 
 1. Use the following command to create the system-managed identity. Take note of the _principalId_ field in the output.
 
-    ```azurecli	
-    az functionapp identity assign -g $rgname -n $telemetryfunctionname	
+    ```azurecli
+    $principalID = $(az functionapp identity assign -g $rgname -n $telemetryfunctionname  --query principalId)
     ```
+
 1. Use the _principalId_ value in the following command to assign the function app's identity to the _Azure Digital Twins Data Owner_ role for your Azure Digital Twins instance.
 
     ```azurecli	
-    az dt role-assignment create --dt-name $dtname --assignee "<principal-ID>" --role "Azure Digital Twins Data Owner"
+    az dt role-assignment create --dt-name $dtname --assignee $principalID --role "Azure Digital Twins Data Owner"
     ```
-Lastly, set the URL of your Azure Digital Twins as an environment variable
+
+1. Lastly, set the URL of your Azure Digital Twins as an environment variable
 
 > [!TIP]
 > The Azure Digital Twins instance's URL is made by adding *https://* to the beginning of your Azure Digital Twins instance's *hostName* which you retrieved earlier.
+> You'll need to edit the command below in notepad and add the FULL url before pasting
 
 ```azurecli
    az functionapp config appsettings set -g $rgname -n $telemetryfunctionname --settings "ADT_SERVICE_URL=https://<your-Azure-Digital-Twins-instance-hostname>"
 ```
 
-
 ### Create an Azure Functions app in Visual Studio Code
+
 In this section, you use Visual Studio Code to create a local Azure Functions project in your chosen language. Later in this article, you'll publish your function code to Azure.
 
 1. Choose the Azure icon in the Activity bar, then in the **Azure: Functions** area, select the **Create new project...** icon.
@@ -183,7 +187,6 @@ In this section, you use Visual Studio Code to create a local Azure Functions pr
     ![Choose Create a new project](./images/create-new-project.png)
 
 1. Choose a directory location for your project workspace and choose **Select**.
-
 
 1. Provide the following information at the prompts:
     - **Select a language for your function project**: Choose `C#`.
@@ -195,7 +198,8 @@ In this section, you use Visual Studio Code to create a local Azure Functions pr
     - **When prompted for a storage account choose**: Skip for now
     - **Select how you would like to open your project**: Choose `Add to workspace`.
 
-### Install Nuget packages
+### Install Nuget package
+
 In the Visual Studio Code Terminal, add the required Nuget packages by typing the following commands:
 
 ```dos
@@ -205,8 +209,10 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
 ```
 
 ### Write an Azure function with an Event Grid trigger
+
 1. In VS Code, open the file TwinsFunction.cs
 1. Replace the code in the Function App template with the sample provided:
+
 >[!TIP]
 >The namespace and function name must match.  If you changed them in the previous steps, make sure to do the same in the code sample.
 
@@ -272,8 +278,11 @@ namespace My.Function
 ```
 
 ### Publish the function app to Azure
+
 1. In the VSCode function extension, click on on **Deploy to Function App...**
+
     ![Choose Deploy to Function App](./images/deploy-to-function-app.png)
+
 - **Select subscription**: Choose `Concierge Subscription` if you're using the sandbox environment
 - **Select Function App in Azure**: Choose the function ending with `telemetryfunction`.
 
@@ -287,10 +296,10 @@ namespace My.Function
 
 1. Run the following [command to create an IoT hub](https://docs.microsoft.com/cli/azure/iot/hub#az-iot-hub-create) in your resource group, using a globally unique name for your IoT hub:
 
-    
    ```azurecli-interactive
    az iot hub create --name $dtname --resource-group $rgname --sku S1
    ```
+
 1. In Azure Cloud Shell, create a device in IoT Hub with the following command:
 
     ```azurecli
@@ -300,7 +309,9 @@ namespace My.Function
 The output is information about the device that was created.
 
 ### Configure EventGrid for IoT Hub
+
 In this section, you configure your IoT Hub to publish events as they occur. 
+
 ```Azure CLI
 iothub=$(az iot hub list -g $rgname --query [].id -o tsv | sed -e 's/\r//g')
 function=$(az functionapp function show -n $functioname -g $rgname --function-name twinsfunction --query id -o tsv | sed -e 's/\r//g')
@@ -316,60 +327,65 @@ At this point, you should see messages showing up in the Azure Function Log Stre
    ![Log Stream](./images/LogStream.png)
 
 ### Send data from a simulated device
-```Azure CLI
-az iot device simulate -d thermostat67 -n $dtname --data '{ "Temperature": 67.3 }' --msg-count 1
-```
+
+    ```Azure CLI
+    az iot device simulate -d thermostat67 -n $dtname --data '{ "Temperature": 67.3 }' --msg-count 1
+    ```
 
 ### Validate Azure Digital Twin is receiving data
+
 1. You can see the values in being updated in the Twin Thermostat67 by running the following command
-```azurecli
- az dt twin show -n $dtname --twin-id thermostat67
-```
+
+    ```azurecli
+     az dt twin show -n $dtname --twin-id thermostat67
+    ```
 
 ## Configure Azure Digital Twin to route data to other environments
 
 ### Create Event Hubs
 1. Azure
+
     ```azurecli
     az eventhubs namespace create --name $dtname --resource-group $rgname -l $location
-    
     az eventhubs eventhub create --name "twins-event-hub" --resource-group $rgname --namespace-name $dtname
-    
     az eventhubs eventhub create --name "tsi-event-hub" --resource-group $rgname --namespace-name $dtname
-    
     az eventhubs eventhub authorization-rule create --rights Listen Send --resource-group $rgname --namespace-name $dtname --eventhub-name "twins-event-hub" --name EHPolicy
-    
     az eventhubs eventhub authorization-rule create --rights Listen Send --resource-group $rgname --namespace-name $dtname --eventhub-name "tsi-event-hub" --name EHPolicy
     ```
+
 ### Create  ADT Route
 
 1. Create an ADT endpoint
+
     ```azurecli
     az dt endpoint create eventhub --endpoint-name EHEndpoint --eventhub-resource-group $rgname --eventhub-namespace $dtname --eventhub "twins-event-hub" --eventhub-policy EHPolicy -n $dtname
     ```
 
 1. Create an ADT route
+1. 
     ```azurecli
     az dt route create -n $dtname --endpoint-name EHEndpoint --route-name EHRoute --filter "type = 'Microsoft.DigitalTwins.Twin.Update'"
     ```
+
 ### Create Azure Function
+
 1. Create an Azure Function
-    
+
 ```azurecli
     az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $twinupdatefunctionname --storage-account  $functionstorage
   ```
 
 1. Add application config that stores the connection strings needed by the Azure Function
+
     ```azurecli
     adtehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $dtname --eventhub-name twins-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
-    
     tsiehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $dtname --eventhub-name tsi-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
-    
     az functionapp config appsettings set --settings "EventHubAppSetting-Twins=$adtehconnectionstring" -g $rgname -n $twinupdatefunctionname
     az functionapp config appsettings set --settings "EventHubAppSetting-TSI=$tsiehconnectionstring" -g $rgname -n $twinupdatefunctionname
     ```
 
-### Create an Azure Functions app in Visual Studio Code
+### Create an Azure Functions app in Visual Studio Code for Event Hub
+
 Use Visual Studio Code to create a local Azure Functions project. Later in this article, you'll publish your function code to Azure.
 
 1. Choose the Azure icon in the Activity bar, then in the **Azure: Functions** area, select the **Create new project...** icon.
@@ -377,7 +393,6 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
     ![Choose Create a new project](./images/create-new-project.png)
 
 1. Choose a directory location for your project workspace and choose **Select**.
-
 
 1. Provide the following information at the prompts:
     - **Select a language for your function project**: Choose `C#`.
@@ -391,7 +406,7 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
     - **Select an event hub policy**: Choose `EHPolicy'
     - **When prompted for a storage account choose**: Skip for now
     - **Select how you would like to open your project**: Choose `Add to workspace`.
-1. Type the following code 
+1. Type the following code
 
 ```C#
 using Microsoft.Azure.EventHubs;
@@ -441,8 +456,10 @@ namespace SampleFunctionsApp
 ```
 
 ### Deploy Azure Function
-1. 1. In the VSCode function extension, click on on **Deploy to Function App...**
+
+1. In the VSCode function extension, click on on **Deploy to Function App...**
     ![Choose Deploy to Function App...](./images/deploy-to-function-app.png)
+
 - **Select subscription**: Choose `Concierge Subscription` if you're using the sandbox environment
 - **Select Function App in Azure**: Choose the function that ends in `twinupdatefunction`.
 
@@ -457,6 +474,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 ## Visualize Data using Time Series Insights
 
 ### Create a Time Series Insights (TSI) environment
+
 1. The commands below will create a storage account (needed by TSI) and provision the TSI environment
 
     ```azurecli
@@ -465,6 +483,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
     key=$(az storage account keys list -g $rgname -n $storage --query [0].value --output tsv)
     az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties "\$dtId" --storage-account-name $storage --storage-management-key $key
     ```
+
 1. After the TSI environment is provisioned, we need to setup an event source. We will use the Event Hub that receives the processed Twin Change events
 
     ```azurecli
@@ -472,20 +491,23 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
     shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $dtname -n RootManageSharedAccessKey --query primaryKey --output tsv | sed -e 's/\r//g')
     az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name "\$Default"
     ```
+
 1. Finally, configure permissions to access the data in the TSI environment.
+
     ```azurecli
     id=$(az ad user show --id username --query objectId -o tsv | sed -e 's/\r//g')
     az timeseriesinsights access-policy create -g $rgname --environment-name $tsiname -n access1 --principal-object-id $id  --description "some description" --roles Contributor Reader
     ```
+
 ### View TSI Data
+
 Now, data should be flowing into your Time Series Insights instance, ready to be an-alyzed. Follow the steps below to explore the data coming in.
 
-1.	Open your Time Series Insights instance in the [Azure portal](https://ms.portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.TimeSeriesInsights%2Fenvironments). 
+1. Open your Time Series Insights instance in the [Azure portal](https://ms.portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.TimeSeriesInsights%2Fenvironments).
 1. Visit the Time Series Insights Explorer URL shown in the instance overview.
   ![TSI Environment](./images/tsi-view-environment.png)
-1.	In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select vibrationsensorxx, select vibration, and hit add.
+1. In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select vibrationsensorxx, select vibration, and hit add.
 
-1.	You should now be seeing the initial temperature readings from your vibra-tion sensor, as shown below. That same temperature reading is updated for sensor2 and machine1, and you can visualize those data streams in tan-dem
+1. You should now be seeing the initial temperature readings from your vibra-tion sensor, as shown below. That same temperature reading is updated for sensor2 and machine1, and you can visualize those data streams in tan-dem
 
-1.	If you allow the simulation to run for much longer, your visualization will look something like this:
- 
+1. If you allow the simulation to run for much longer, your visualization will look something like this:
