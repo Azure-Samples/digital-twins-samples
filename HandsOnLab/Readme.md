@@ -19,32 +19,40 @@ In this HOL, you will be setting up the end-to-end-architecture below.
 - [Azure Command Line Interface (CLI)](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
     - Recommend installing AZ CLI locally
     - Do not recommend using the Azure Cloud Shell as it will timeout due to the length of the lab
+- [Visual Studio Code](https://code.visualstudio.com)
+- [C# VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
+- [Azure Function VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
+- [Node.js](https://nodejs.org/en/download/)
+
     
 ## Lab Setup
 
 ### Setup Variables
 First, we'll need to create and store some variables in the Azure Cloud Shell. This will make running the commands needed in the subsequent units easier and avoid mistakes from typos.
 
-1. If you're using the Azure Cloud Shell (not recommended) make sure the CLI is set to **Bash**
-1. Copy and paste the following into the CLI.
+1. If you're using the Azure Cloud Shell (not recommended) make sure the CLI is set to **Powershell**
+1. If you're on your local machine, open a PowerShell console
+1. Log into Azure by running the command: `az login
+1. Copy and paste the following
 
 
 ```azurecli
-rgname=adthol-$RANDOM
-dtname=$rgname
-location=eastus
-username=<account used to log into azure>
-functionstorage=$rgname-functionstorage
-telemetryfunctionname=$rgname-telemetryfunction
-twinupdatefunctionname=$rgname-twinupdatefunction
+//ignore / for airlift: $rgname = $(az group list --query "[? contains(name,'adthol')].name" -o tsv)
+$rgname = "adthol"+ $(get-random -maximum 10000)
+$dtname = $rgname
+$location = eastus
+$username = <account used to log into azure>
+$functionstorage = $rgname + "storage"
+$telemetryfunctionname = $rgname + "-telemetryfunction"
+$twinupdatefunctionname = $rgname + "-twinupdatefunction"
 
-echo $rgname
-echo $dtname
-echo $location
-echo $username
-echo $telemetryfunctionname
-echo $twinupdatefunctionname
-echo $functionstorage
+$rgname
+$dtname
+$location
+$username
+$telemetryfunctionname
+$twinupdatefunctionname
+$functionstorage
 ```
 > [!NOTE]
 >
