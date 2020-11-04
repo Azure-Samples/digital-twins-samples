@@ -82,10 +82,12 @@ $functionstorage
     az account show --query 'tenantId'
     ```
 
-## Setup ADT Models
-You can add/upload a model using the CLI command below, and then create a twin using this model that will be updated with information from IoT Hub.
+## Azure Digital Twin Modeling
 
-The model looks like this:
+You can add/upload models using the CLI command below, and then create a twin using this model that will be updated with information from IoT Hub.
+
+A simple model looks like the example below. 
+
 ```JSON
 {
   "@id": "dtmi:contosocom:DigitalTwins:Thermostat;1",
@@ -100,11 +102,19 @@ The model looks like this:
   ]
 }
 ```
+
+For this exercise we will be simulating a factory which requires much more complex model.  The models we'll be using are:
+
+- FactoryInterface.json
+- FactoryFloorInterface.json
+- ProductionLineInterface.json
+- ProductionStepInterface.json
+- ProductionStepGrinding.json
+ 
+## Setup ADT Models
 1. Upload this model to your twins instance by running the following command in the Azure shell from the previous unit
 
-    ```azurecli
-    az dt model create --models '{  "@id": "dtmi:contosocom:DigitalTwins:Thermostat;1",  "@type": "Interface",  "@context": "dtmi:dtdl:context;2",  "contents": [    {      "@type": "Property",      "name": "Temperature",      "schema": "double"    }, {      "@type": "Property",      "name": "RESTAPI",      "schema": "double"    }, {      "@type": "Property",      "name": "LOGICAPP",      "schema": "double"    }  ]}' -n $dtname
-    ```
+
 1. Use the following command to create a twin and set 0.0 as an initial temperature value.
 
     ```azurecli
@@ -127,13 +137,12 @@ Output of a successful twin create command should look like this:
       "lastUpdateTime": "2020-10-26T19:27:20.1460603Z"
     }
   },
-  "LOGICAPP": 0.0,
-  "RESTAPI": 0.0,
   "Temperature": 0.0
 }
 ```
 
 ## Setup Function to Ingest Events from IoT Hub
+
 We can ingest data into Azure Digital Twins through external compute resources, such as an Azure function, that receives the data and uses the DigitalTwins APIs to set properties.
 
 ### Create an Azure Function via CLI
