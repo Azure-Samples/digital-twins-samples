@@ -60,7 +60,13 @@ $functionstorage
 
 ## Clone GitHub Repo
 
-1. git clone 
+1. Create a directory and clone the repo. Replace *username* with a valid directory
+
+```azurecli
+mkdir c:\users\username\repos
+cd c:\users\username\repos
+git clone https://github.com/Teodelas/digital-twins-samples.git
+```
 
 ## Use the CLI to deploy ADT
 
@@ -107,7 +113,7 @@ A simple model looks like the example below.
 }
 ```
 
-For this exercise we will be simulating a factory which requires much more complex model.  The models we'll be using are:
+For this exercise we will be simulating a factory which requires much more complex model.  The models we'll be using are in the digital-twins-samples/HandsOnLab/models folder:
 
 - FactoryInterface.json
 - FactoryFloorInterface.json
@@ -116,37 +122,45 @@ For this exercise we will be simulating a factory which requires much more compl
 - ProductionStepGrinding.json
 
 ## Setup ADT Models
+Upload these model to your twins instance by running following the steps below
 
-1. Upload this model to your twins instance by running the following command in the Azure shell from the previous unit
-
-
-1. Use the following command to create a twin and set 0.0 as an initial temperature value.
+1. Navigate to the folder where the models are stored and upload the models:
 
     ```azurecli
-    az dt twin create --dtmi "dtmi:contosocom:DigitalTwins:Thermostat;1" --twin-id thermostat67 --properties '{"Temperature": 0.0, "RESTAPI": 0.0, "LOGICAPP": 0.0}' --dt-name $dtname
+    cd C:\Users\username\repos\digital-twins-samples\models
+    $factorymodelid = $(az dt model create -n $dtname --models .\FactoryInterface.json --query [].id -o tsv)
+    $floormodelid = $(az dt model create -n $dtname --models .\FactoryFloorInterface.json --query [].id -o tsv)
+    $prodlinemodelid = $(az dt model create -n $dtname --models .\ProductionLineInterface.json --query [].id -o tsv)
+    $prodstepmodelid = $(az dt model create -n $dtname --models .\ProductionStepInterface.json --query [].id -o tsv)
+    $gridingstepmodelid = $(az dt model create -n $dtname --models .\ProductionStepGrinding.json --query [].id -o tsv)
     ```
 
-Output of a successful twin create command should look like this:
+1. Once the models are successfully uploaded, use the following commands to create Twin instances
 
-```json
-{
-  "$dtId": "thermostat67",
-  "$etag": "W/\"911fc8fa-8ffb-4c22-b7f3-ed939f4f8c64\"",
-  "$metadata": {
-    "$model": "dtmi:contosocom:DigitalTwins:Thermostat;1",
-    "LOGICAPP": {
-      "lastUpdateTime": "2020-10-26T19:27:20.1460603Z"
-    },
-    "RESTAPI": {
-      "lastUpdateTime": "2020-10-26T19:27:20.1460603Z"
-    },
-    "Temperature": {
-      "lastUpdateTime": "2020-10-26T19:27:20.1460603Z"
-    }
-  },
-  "Temperature": 0.0
-}
-```
+    ```azurecli
+    az dt twin create -n $dtname --dtmi $factorymodelid --twin-id "ChocolateFactory"
+    az dt twin create -n $dtname --dtmi $floormodelid --twin-id "FactoryFloor"
+    az dt twin create -n $dtname --dtmi $prodlinemodelid --twin-id "ProductionLine"
+    az dt twin create -n $dtname --dtmi $gridingstepmodelid --twin-id "GrindingStep"
+    ```
+1. To setup the relationships between twin instances, first we must identify the relationship definitions in the models (.json documents) that were uploaded.  In the case of the Factory Interface / Chocolate Factory, the relationship name is "rel_has_floors"
+    
+    ![Relationship](./images/rel_has_floors.png)
+
+1. Now that we know the relationship that we want to establish, run the commands below to instantiate the relationships.
+
+    ```azurecli
+    $relname = "rel_has_floors"
+    az dt twin relationship create -n $dtname --relationship $relname --twin-id "ChocolateFactory" --target "FactoryFloor" --relationship-id "Factory has floors"
+    $relname = "rel_runs_lines"
+    az dt twin relationship create -n $dtname --relationship $relname --twin-id "FactoryFloor" --target "ProductionLine" --relationship-id "Floor run production lines"
+    $relname = "rel_runs_steps"
+    az dt twin relationship create -n $dtname --relationship $relname --twin-id "ProductionLine" --target "GrindingStep" --relationship-id "Floor run production lines"
+    ```
+
+You now have an Azure Digital Twin of a factory! You can view your DT using a tool like [ADT Explorer](https://docs.microsoft.com/en-us/samples/azure-samples/digital-twins-explorer/digital-twins-explorer/).
+
+![ADT Explorer](./images/adt-explorer.png)
 
 ## Setup Function to Ingest Events from IoT Hub
 
@@ -219,7 +233,7 @@ In this section, you use Visual Studio Code to create a local Azure Functions pr
 In the Visual Studio Code Terminal, add the required Nuget packages by typing the following commands:
 
 ```dos
-    dotnet add package Azure.DigitalTwins.Core --version 1.0.0-preview.3
+    dotnet add package Azure.DigitalTwins.Core --version 1.0.0
     dotnet add package Azure.identity --version 1.2.2
     dotnet add package System.Net.Http
 ```
@@ -232,66 +246,65 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
 >[!TIP]
 >The namespace and function name must match.  If you changed them in the previous steps, make sure to do the same in the code sample.
 
-```csharp
-using System;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
-using Microsoft.Azure.EventGrid.Models;
-using Microsoft.Azure.WebJobs.Extensions.EventGrid;
-using Microsoft.Extensions.Logging;
-using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
-using Azure.Identity;
-using System.Net.Http;
-using Azure.Core.Pipeline;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-
-namespace My.Function
-{
-    public class TwinsFunction
+    ```csharp
+    using Azure;
+    using Azure.Core.Pipeline;
+    using Azure.DigitalTwins.Core;
+    using Azure.Identity;
+    using Microsoft.Azure.EventGrid.Models;
+    using Microsoft.Azure.WebJobs;
+    using Microsoft.Azure.WebJobs.Extensions.EventGrid;
+    using Microsoft.Extensions.Logging;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
+    using System;
+    using System.Net.Http;
+    
+    namespace My.Function
     {
-        //Your Digital Twin URL is stored in an application setting in Azure Functions
-        private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
-        private static readonly HttpClient httpClient = new HttpClient();
-
-        [FunctionName("TwinsFunction")]
-        public async void Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
+        public class TwinsFunction
         {
-            log.LogInformation(eventGridEvent.Data.ToString());
-            if (adtInstanceUrl == null) log.LogError("Application setting \"ADT_SERVICE_URL\" not set");
-            try
+            //Your Digital Twin URL is stored in an application setting in Azure Functions
+            private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
+            private static readonly HttpClient httpClient = new HttpClient();
+    
+            [FunctionName("TwinsFunction")]
+            public async void Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
             {
-                //Authenticate with Digital Twins
-                ManagedIdentityCredential cred = new ManagedIdentityCredential("https://digitaltwins.azure.net");
-                DigitalTwinsClient client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
-                log.LogInformation($"ADT service client connection created.");
-                if (eventGridEvent != null && eventGridEvent.Data != null)
+                log.LogInformation(eventGridEvent.Data.ToString());
+                if (adtInstanceUrl == null) log.LogError("Application setting \"ADT_SERVICE_URL\" not set");
+                try
                 {
-                    log.LogInformation(eventGridEvent.Data.ToString());
-
-                    // Reading deviceId and temperature for IoT Hub JSON
-                    JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
-                    string deviceId = (string)deviceMessage["systemProperties"]["iothub-connection-device-id"];
-                    var temperature = deviceMessage["body"]["Temperature"];
-                    
-                    log.LogInformation($"Device:{deviceId} Temperature is:{temperature}");
-
-                    //Update twin using device temperature
-                    var uou = new UpdateOperationsUtility();
-                    uou.AppendReplaceOp("/Temperature", temperature.Value<double>());
-                    await client.UpdateDigitalTwinAsync(deviceId, uou.Serialize());
+                    //Authenticate with Digital Twins
+                    ManagedIdentityCredential cred = new ManagedIdentityCredential("https://digitaltwins.azure.net");
+                    DigitalTwinsClient client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
+                    log.LogInformation($"ADT service client connection created.");
+                    if (eventGridEvent != null && eventGridEvent.Data != null)
+                    {
+                        log.LogInformation(eventGridEvent.Data.ToString());
+    
+                        // Reading deviceId and temperature for IoT Hub JSON
+                        JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
+                        string deviceId = (string)deviceMessage["systemProperties"]["iothub-connection-device-id"];
+                        var temperature = deviceMessage["body"]["ChasisTemperature"];
+                        
+                        log.LogInformation($"Device:{deviceId} ChasisTemperature is:{temperature}");
+    
+                        //Update twin using device temperature
+                        var updateTwinData = new JsonPatchDocument();
+                        updateTwinData.AppendAdd("/ChasisTemperature", temperature.Value<double>());
+                        await client.UpdateDigitalTwinAsync(deviceId, updateTwinData);
+                    }
                 }
+                catch (Exception e)
+                {
+                    log.LogError(e.Message);
+                }
+    
             }
-            catch (Exception e)
-            {
-                log.LogError(e.Message);
-            }
-
         }
     }
-}
-```
+    ```
 
 ### Publish the function app to Azure
 
@@ -326,11 +339,13 @@ The output is information about the device that was created.
 
 ### Configure EventGrid for IoT Hub
 
-In this section, you configure your IoT Hub to publish events as they occur. 
+In this section, you configure your IoT Hub to publish events as they occur.
+
+1. Configure IoT Hub to publish events to EventGrid
 
 ```Azure CLI
-iothub=$(az iot hub list -g $rgname --query [].id -o tsv | sed -e 's/\r//g')
-function=$(az functionapp function show -n $functioname -g $rgname --function-name twinsfunction --query id -o tsv | sed -e 's/\r//g')
+$iothub=$(az iot hub list -g $rgname --query [].id -o tsv | sed -e 's/\r//g')
+$function=$(az functionapp function show -n $functioname -g $rgname --function-name twinsfunction --query id -o tsv | sed -e 's/\r//g')
 az eventgrid event-subscription create --name IoTHubEvents \
                                         --source-resource-id $iothub \
                                        --endpoint $function \
