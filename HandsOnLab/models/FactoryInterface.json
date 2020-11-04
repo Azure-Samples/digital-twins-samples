@@ -1,0 +1,121 @@
+[
+  {
+    "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:chocolate_factory;1",
+    "@type": "Interface",
+    "displayName": "Digital Factory - Interface Model",
+    "@context": "dtmi:dtdl:context;2",
+    "contents": [
+      {
+        "@type": "Property",
+        "name": "FactoryId",
+        "schema": "string"
+      },
+      {
+        "@type": "Property",
+        "name": "FactoryName",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@type": "Property",
+        "name": "Country",
+        "schema": "string"
+      },
+      {
+        "@type": "Property",
+        "name": "ZipCode",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@type": "Property",
+        "name": "GeoLocation",
+        "schema": {
+          "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:custom_schema:GeoCord;1",
+          "@type": "Object",
+          "fields": [
+            {
+              "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:custom_schema:GeoCord:lat;1",
+              "name": "Latitude",
+              "schema": "double"
+            },
+            {
+              "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:custom_schema:GeoCord:lon;1",
+              "name": "Longitude",
+              "schema": "double"
+            }
+          ]
+        }
+      },
+      {
+        "@type": "Property",
+        "name": "Tags",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:chocolate_factory:rel_has_floors;1",
+        "name": "rel_has_floors",
+        "displayName": "Has Floors",
+        "target": "dtmi:com:microsoft:iot:e2e:digital_factory:floor;1"
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:chocolate_factory:rel_supplied_by;1",
+        "name": "rel_supplied_by",
+        "displayName": "SuppliedBy",
+        "target": "dtmi:com:microsoft:iot:e2e:digital_factory:chocolate_factory:supplier;1",
+        "properties": [
+          {
+            "@type": "Property",
+            "name": "last_supply_date",
+            "schema": "date"
+          },
+          {
+            "@type": "Property",
+            "name": "supplier_contact",
+            "schema": "string"
+          }
+        ]
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:chocolate_factory:rel_serves_retailer;1",
+        "name": "rel_serves_retailer",
+        "displayName": "serves retailer",
+        "target": "dtmi:com:microsoft:iot:e2e:digital_factory:chocolate_factory:retailer;1",
+        "properties": [
+          {
+            "@type": "Property",
+            "name": "RetailerId",
+            "schema": "string"
+          }
+        ]
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:chocolate_factory:rel_trasnportation_by;1",
+        "name": "transportation_by",
+        "displayName": "Transportation By",
+        "properties": [
+          {
+            "@type": "Property",
+            "name": "last_shipment_date",
+            "schema": "string"
+          },
+          {
+            "@type": "Property",
+            "name": "last_shipment_product_id",
+            "schema": "string"
+          },
+          {
+            "@type": "Property",
+            "name": "last_shipment_TransportationUnitId",
+            "schema": "string"
+          }
+        ]
+      }
+    ]
+  }
+]

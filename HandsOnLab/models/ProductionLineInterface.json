@@ -1,0 +1,85 @@
+[
+  {
+    "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_line;1",
+    "@type": "Interface",
+    "displayName": "Factory Production Line - Interface Model",
+    "@context": "dtmi:dtdl:context;2",
+    "contents": [
+      {
+        "@type": "Property",
+        "name": "LineId",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@type": "Property",
+        "name": "LineName",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@type": "Property",
+        "name": "CurrentProductId",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@type": "Property",
+        "name": "ProductBatchNumber",
+        "schema": "integer",
+        "writable": true
+      },
+      {
+        "@type": "Property",
+        "name": "LineOperationStatus",
+        "schema": "dtmi:com:microsoft:iot:e2e:digital_factory:production_line:status;1",
+        "writable": true
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_line:rel_runs_steps;1",
+        "name": "rel_runs_steps",
+        "displayName": "Runs Steps",
+        "properties": [
+          {
+            "@type": "Property",
+            "name": "active",
+            "schema": "dtmi:com:microsoft:iot:e2e:digital_factory:production_line:status;1"
+          }
+        ]
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_line:rel_contains_equipment;1",
+        "name": "rel_contains_equipment",
+        "displayName": "Contains Equipment",
+        "target": "dtmi:com:microsoft:iot:e2e:digital_factory:equipment;1",
+        "properties": [
+          {
+            "@type": "Property",
+            "name": "status",
+            "schema": "dtmi:com:microsoft:iot:e2e:digital_factory:production_line:status;1"
+          }
+        ]
+      }
+    ],
+
+    "schemas":  {
+      "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_line:status;1",
+      "@type": "Enum",
+      "valueSchema": "integer",
+      "enumValues": [
+        {
+          "name": "offline",
+          "displayName": "Offline",
+          "enumValue": 1
+        },
+        {
+          "name": "online",
+          "displayName": "Online",
+          "enumValue": 2
+        }
+      ]
+    }
+  }
+]
