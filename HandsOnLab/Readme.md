@@ -1,6 +1,7 @@
 # Azure Digital Twins Hands On Lab
 
 ## Overview
+
 Suppose you work at a Chocolate Manufacturing Factory as Technical Specialist to support The Chocolate Factory line operators. You are commissioned to launch a new near real-time dashboard to support operators monitor running operations for the Roasting, Grinding and Molding processes to answer questions such as: 
 •	find all time windows when temperature during roasting is >150°F in the previous 24 hours and trace back events in ADT leading to that
 •	Calculate the average Grinding vibration in the last 2 minutes to ensure the process meets manufacturing quality standards
@@ -10,8 +11,10 @@ Also, you may need to gather historical data that can be used for postmortem roo
 ![Chocolate Factory](./images/chocofactoryprocess.png)
 
 ## Architecture
+
 In this HOL, you will be setting up the end-to-end-architecture below.
 ![Architecture](./images/hol-architecture.png)
+
 ## Prerequisites
 
 - Azure Subcription
@@ -24,15 +27,15 @@ In this HOL, you will be setting up the end-to-end-architecture below.
 - [Azure Function VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
 - [Node.js](https://nodejs.org/en/download/)
 
-    
 ## Lab Setup
 
 ### Setup Variables
+
 First, we'll need to create and store some variables in the Azure Cloud Shell. This will make running the commands needed in the subsequent units easier and avoid mistakes from typos.
 
 1. If you're using the Azure Cloud Shell (not recommended) make sure the CLI is set to **Powershell**
 1. If you're on your local machine, open a PowerShell console
-1. Log into Azure by running the command: `az login
+1. Log into Azure by running the command: **az login**
 1. Copy and paste the following
 
 
@@ -45,6 +48,8 @@ $username = <account used to log into azure>
 $functionstorage = $rgname + "storage"
 $telemetryfunctionname = $rgname + "-telemetryfunction"
 $twinupdatefunctionname = $rgname + "-twinupdatefunction"
+
+az group create -n $rgname -l $location
 
 $rgname
 $dtname
@@ -62,32 +67,39 @@ $functionstorage
 
 1. Create a directory and clone the repo. Replace *username* with a valid directory
 
-```azurecli
-mkdir c:\users\username\repos
-cd c:\users\username\repos
-git clone https://github.com/Teodelas/digital-twins-samples.git
-```
+    ```azurecli
+    mkdir c:\users\username\repos
+    cd c:\users\username\repos
+    git clone https://github.com/Teodelas/digital-twins-samples.git
+    ```
 
 ## Use the CLI to deploy ADT
 
 1. Create Azure Digital Twins
+
     ```azurecli
    az dt create --dt-name $dtname -g $rgname -l $location
     ```
+
 1. Assign permissions to Azure Digital Twins
 
     ```azurecli
     az dt role-assignment create -n $dtname -g $rgname --role "Azure Digital Twins Data Owner" --assignee $username -o json
     ```
 ### Collect instance values
+
 >[!NOTE] Save these outputs below to notepad for use later
 >
 1. Get the hostname of the Digital Twins instance. Copy the output to notepad for use later.
+
     ```azurecli
     az dt show -n $dtname --query 'hostName'
     ```
+
 ### Collect Azure AD tenant values
+
 1. Get the Azure Active Directory (AAD) Tennant ID
+
     ```azurecli
     az account show --query 'tenantId'
     ```
@@ -122,6 +134,7 @@ For this exercise we will be simulating a factory which requires much more compl
 - ProductionStepGrinding.json
 
 ## Setup ADT Models
+
 Upload these model to your twins instance by running following the steps below
 
 1. Navigate to the folder where the models are stored and upload the models:
@@ -143,8 +156,9 @@ Upload these model to your twins instance by running following the steps below
     az dt twin create -n $dtname --dtmi $prodlinemodelid --twin-id "ProductionLine"
     az dt twin create -n $dtname --dtmi $gridingstepmodelid --twin-id "GrindingStep"
     ```
+
 1. To setup the relationships between twin instances, first we must identify the relationship definitions in the models (.json documents) that were uploaded.  In the case of the Factory Interface / Chocolate Factory, the relationship name is "rel_has_floors"
-    
+
     ![Relationship](./images/rel_has_floors.png)
 
 1. Now that we know the relationship that we want to establish, run the commands below to instantiate the relationships.
