@@ -332,10 +332,10 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
 1. In Azure Cloud Shell, create a device in IoT Hub with the following command:
 
     ```azurecli
-    az iot hub device-identity create --device-id thermostat67 --hub-name $dtname -g $rgname
+    az iot hub device-identity create --device-id GrindingSensor --hub-name $dtname -g $rgname
     ```
 
-The output is information about the device that was created.
+The output is information about the device that was created. Copy the device connection string for use later.
 
 ### Configure EventGrid for IoT Hub
 
@@ -344,8 +344,8 @@ In this section, you configure your IoT Hub to publish events as they occur.
 1. Configure IoT Hub to publish events to EventGrid
 
 ```Azure CLI
-$iothub=$(az iot hub list -g $rgname --query [].id -o tsv | sed -e 's/\r//g')
-$function=$(az functionapp function show -n $functioname -g $rgname --function-name twinsfunction --query id -o tsv | sed -e 's/\r//g')
+$iothub=$(az iot hub list -g $rgname --query [].id -o tsv)
+$function=$(az functionapp function show -n $functioname -g $rgname --function-name twinsfunction --query id -o tsv)
 az eventgrid event-subscription create --name IoTHubEvents \
                                         --source-resource-id $iothub \
                                        --endpoint $function \
@@ -359,21 +359,32 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 
 ### Send data from a simulated device
 
+1. Open the file ~\digital-twins-samples\HandsOnLab\SimulatedClientGrindingSensor.js
+1. Find the line **const deviceConnectionString = ""** and update it with the device connection string created earlier.
+
+1. In the PowerShell window, navigate to the SimulatedClient folder in the repo and run the simulated client
+
     ```Azure CLI
-    az iot device simulate -d thermostat67 -n $dtname --data '{ "Temperature": 67.3 }' --msg-count 1
+    cd C:\Users\username\repos\digital-twins-samples\models\SimulatedClient
+    npm install
+    ./GrindingSensor.js
     ```
+
+1. The simulated device will begin sending data.
+
 
 ### Validate Azure Digital Twin is receiving data
 
-1. You can see the values in being updated in the Twin Thermostat67 by running the following command
+1. You can see the values in being updated in the Twin GrindingSensor by running the following command
 
     ```azurecli
-     az dt twin show -n $dtname --twin-id thermostat67
+     az dt twin show -n $dtname --twin-id GrindingSensor
     ```
 
 ## Configure Azure Digital Twin to route data to other environments
 
 ### Create Event Hubs
+
 1. Azure
 
     ```azurecli
@@ -393,7 +404,7 @@ At this point, you should see messages showing up in the Azure Function Log Stre
     ```
 
 1. Create an ADT route
-1. 
+
     ```azurecli
     az dt route create -n $dtname --endpoint-name EHEndpoint --route-name EHRoute --filter "type = 'Microsoft.DigitalTwins.Twin.Update'"
     ```
@@ -409,8 +420,8 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 1. Add application config that stores the connection strings needed by the Azure Function
 
     ```azurecli
-    adtehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $dtname --eventhub-name twins-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
-    tsiehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $dtname --eventhub-name tsi-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
+    $adtehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $dtname --eventhub-name twins-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
+    $tsiehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $dtname --eventhub-name tsi-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
     az functionapp config appsettings set --settings "EventHubAppSetting-Twins=$adtehconnectionstring" -g $rgname -n $twinupdatefunctionname
     az functionapp config appsettings set --settings "EventHubAppSetting-TSI=$tsiehconnectionstring" -g $rgname -n $twinupdatefunctionname
     ```
@@ -509,24 +520,24 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 1. The commands below will create a storage account (needed by TSI) and provision the TSI environment
 
     ```azurecli
-    storage=adtholtsitorage$RANDOM
+    $storage="adtholtsitorage"+(get-random -maximum 10000)
     az storage account create -g $rgname -n $storage --https-only
-    key=$(az storage account keys list -g $rgname -n $storage --query [0].value --output tsv)
+    $key=$(az storage account keys list -g $rgname -n $storage --query [0].value --output tsv)
     az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties "\$dtId" --storage-account-name $storage --storage-management-key $key
     ```
 
 1. After the TSI environment is provisioned, we need to setup an event source. We will use the Event Hub that receives the processed Twin Change events
 
     ```azurecli
-    es_resource_id=$(az eventhubs eventhub show -n tsi-event-hub -g $rgname --namespace $dtname --query id -o tsv | sed -e 's/\r//g')
-    shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $dtname -n RootManageSharedAccessKey --query primaryKey --output tsv | sed -e 's/\r//g')
+    $es_resource_id=$(az eventhubs eventhub show -n tsi-event-hub -g $rgname --namespace $dtname --query id -o tsv)
+    $shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $dtname -n RootManageSharedAccessKey --query primaryKey --output tsv)
     az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name "\$Default"
     ```
 
 1. Finally, configure permissions to access the data in the TSI environment.
 
     ```azurecli
-    id=$(az ad user show --id username --query objectId -o tsv | sed -e 's/\r//g')
+    $id=$(az ad user show --id username --query objectId -o tsv)
     az timeseriesinsights access-policy create -g $rgname --environment-name $tsiname -n access1 --principal-object-id $id  --description "some description" --roles Contributor Reader
     ```
 
