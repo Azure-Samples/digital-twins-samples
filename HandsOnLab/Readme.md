@@ -58,6 +58,10 @@ $functionstorage
 >
 >**Save these values for use later in notepad or another similar tool**
 
+## Clone GitHub Repo
+
+1. git clone 
+
 ## Use the CLI to deploy ADT
 
 1. Create Azure Digital Twins
@@ -110,8 +114,9 @@ For this exercise we will be simulating a factory which requires much more compl
 - ProductionLineInterface.json
 - ProductionStepInterface.json
 - ProductionStepGrinding.json
- 
+
 ## Setup ADT Models
+
 1. Upload this model to your twins instance by running the following command in the Azure shell from the previous unit
 
 
@@ -120,7 +125,9 @@ For this exercise we will be simulating a factory which requires much more compl
     ```azurecli
     az dt twin create --dtmi "dtmi:contosocom:DigitalTwins:Thermostat;1" --twin-id thermostat67 --properties '{"Temperature": 0.0, "RESTAPI": 0.0, "LOGICAPP": 0.0}' --dt-name $dtname
     ```
+
 Output of a successful twin create command should look like this:
+
 ```json
 {
   "$dtId": "thermostat67",
