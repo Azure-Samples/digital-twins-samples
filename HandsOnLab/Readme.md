@@ -179,7 +179,7 @@ You now have an Azure Digital Twin of a factory production line! You can view yo
 
 ## Setup Function to Ingest Events from IoT Hub
 
-We can ingest data into Azure Digital Twins through external compute resources, such as an Azure function, that receives the data and uses the DigitalTwins SDK to set properties.
+We can ingest data into Azure Digital Twins through external compute resources, such as an Azure Function, that receives the data and uses the Digital Twins SDK to set properties.
 
 ### Create an Azure Function via CLI
 
@@ -261,7 +261,7 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
 >[!TIP]
 >The namespace and function name must match.  If you changed them in the previous steps, make sure to do the same in the code sample.
 
-    ```csharp
+```csharp
     using Azure;
     using Azure.Core.Pipeline;
     using Azure.DigitalTwins.Core;
@@ -319,7 +319,7 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
             }
         }
     }
-    ```
+```
 
 ### Publish the function app to Azure
 
