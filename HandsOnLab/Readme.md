@@ -36,11 +36,10 @@ First, we'll need to create and store some variables in the Azure Cloud Shell. T
 1. If you're using the Azure Cloud Shell (not recommended) make sure the CLI is set to **Powershell**
 1. If you're on your local machine, open a PowerShell console
 1. Log into Azure by running the command: **az login**
-1. Copy and paste the following
-
+1. Edit the below as needed then copy and paste the following into the Powershell window
 
 ```azurecli
-//ignore / for airlift: $rgname = $(az group list --query "[? contains(name,'adthol')].name" -o tsv)
+#!!for OCP Bootcamp use this: $rgname = $(az group list --query "[? contains(name,'adthol')].name" -o tsv)
 $rgname = "adthol"+ $(get-random -maximum 10000)
 $dtname = $rgname
 $location = eastus
@@ -106,9 +105,7 @@ $functionstorage
 
 ## Azure Digital Twin Modeling
 
-You can add/upload models using the CLI command below, and then create a twin using this model that will be updated with information from IoT Hub.
-
-A simple model looks like the example below. 
+A simple ADT model looks like the example below.
 
 ```JSON
 {
@@ -140,7 +137,7 @@ Upload these model to your twins instance by running following the steps below
 1. Navigate to the folder where the models are stored and upload the models:
 
     ```azurecli
-    cd C:\Users\username\repos\digital-twins-samples\models
+    cd C:\Users\username\repos\digital-twins-samples\handsonlab\models
     $factorymodelid = $(az dt model create -n $dtname --models .\FactoryInterface.json --query [].id -o tsv)
     $floormodelid = $(az dt model create -n $dtname --models .\FactoryFloorInterface.json --query [].id -o tsv)
     $prodlinemodelid = $(az dt model create -n $dtname --models .\ProductionLineInterface.json --query [].id -o tsv)
@@ -157,7 +154,7 @@ Upload these model to your twins instance by running following the steps below
     az dt twin create -n $dtname --dtmi $gridingstepmodelid --twin-id "GrindingStep"
     ```
 
-1. To setup the relationships between twin instances, first we must identify the relationship definitions in the models (.json documents) that were uploaded.  In the case of the Factory Interface / Chocolate Factory, the relationship name is "rel_has_floors"
+1. Next we'll need to establish how the models relate to each other. To setup the relationships between twin instances, we must identify the relationship definitions in the models (.json documents) that were uploaded.  In the case of the Factory Interface / Chocolate Factory, the relationship name is "rel_has_floors"
 
     ![Relationship](./images/rel_has_floors.png)
 
@@ -172,13 +169,13 @@ Upload these model to your twins instance by running following the steps below
     az dt twin relationship create -n $dtname --relationship $relname --twin-id "ProductionLine" --target "GrindingStep" --relationship-id "Floor run production lines"
     ```
 
-You now have an Azure Digital Twin of a factory! You can view your DT using a tool like [ADT Explorer](https://docs.microsoft.com/en-us/samples/azure-samples/digital-twins-explorer/digital-twins-explorer/).
+You now have an Azure Digital Twin of a factory production line! You can view your DT using a tool like [ADT Explorer](https://docs.microsoft.com/en-us/samples/azure-samples/digital-twins-explorer/digital-twins-explorer/). ADT explorer also provides additional Twin Capabilities like uploading models, creating twins, relationship, and updating twin properties.
 
 ![ADT Explorer](./images/adt-explorer.png)
 
 ## Setup Function to Ingest Events from IoT Hub
 
-We can ingest data into Azure Digital Twins through external compute resources, such as an Azure function, that receives the data and uses the DigitalTwins APIs to set properties.
+We can ingest data into Azure Digital Twins through external compute resources, such as an Azure function, that receives the data and uses the DigitalTwins SDK to set properties.
 
 ### Create an Azure Function via CLI
 
@@ -196,11 +193,11 @@ We can ingest data into Azure Digital Twins through external compute resources, 
 
 ### Configure security access for the Azure function app
 
-The Azure function skeleton from earlier examples requires that a bearer token to be passed in order to authenticate with Azure Digital Twins. To make sure that this bearer token is passed, you'll need to create a [Managed Service Identity (MSI)](../active-directory/managed-identities-azure-resources/overview.md) for the function app.
+An Azure function requires a security token in order to authenticate with Azure Digital Twins. To make sure that this token is passed, you'll need to create a [Managed Service Identity (MSI)](../active-directory/managed-identities-azure-resources/overview.md) for the function app.
 
-In this section, we'll create a system-managed identity and assign the function app's identity to the _Azure Digital Twins Owner (Preview)_ role for your Azure Digital Twins instance. The Managed Identity gives the function app permission in the instance to perform data plane activities. We'll also provide the the URL of Azure Digital Twins instance to the function by setting an environment variable.
+In this section, we'll create a system-managed identity and assign the function app's identity to the *Azure Digital Twins Data Owner* role for your Azure Digital Twins instance. The Managed Identity gives the function app permission in the instance to perform data plane activities. We'll also provide the the URL of Azure Digital Twins instance to the function by setting an environment variable.
 
-1. Use the following command to create the system-managed identity. Take note of the _principalId_ field in the output.
+1. Use the following command to create the system-managed identity. We'll also store the _principalId_ field in the a variable for use later.
 
     ```azurecli
     $principalID = $(az functionapp identity assign -g $rgname -n $telemetryfunctionname  --query principalId)
@@ -376,6 +373,8 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 1. Open the file ~\digital-twins-samples\HandsOnLab\SimulatedClientGrindingSensor.js
 1. Find the line **const deviceConnectionString = ""** and update it with the device connection string created earlier.
 
+![Device Connection String](./images/update-device-key.png)
+
 1. In the PowerShell window, navigate to the SimulatedClient folder in the repo and run the simulated client
 
     ```Azure CLI
@@ -397,9 +396,11 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 
 ## Configure Azure Digital Twin to route data to other environments
 
+ADT supports sending information about changes to ADT to external systems through ADT routes. In the following section, we'll configure ADT to send data to Event Hubs to be processed by an Azure Function.
+
 ### Create Event Hubs
 
-1. Azure
+1. Create two (2) event hubs.
 
     ```azurecli
     az eventhubs namespace create --name $dtname --resource-group $rgname -l $location
@@ -480,17 +481,17 @@ namespace SampleFunctionsApp
     { 
         [FunctionName("ProcessDTUpdatetoTSI")]
         public static async Task Run(
-            [EventHubTrigger("twins-event-hub", Connection = "EventHubAppSet-ting-Twins")]EventData myEventHubMessage, 
+            [EventHubTrigger("twins-event-hub", Connection = "EventHubAppSetting-Twins")]EventData myEventHubMessage, 
             [EventHub("tsi-event-hub", Connection = "EventHubAppSetting-TSI")]IAsyncCollector<string> outputEvents, 
             ILogger log)
         {
-            JObject message = (JOb-ject)JsonConvert.DeserializeObject(Encoding.UTF8.GetString(myEventHubMessage.Body));
+            JObject message = (JObject)JsonConvert.DeserializeObject(Encoding.UTF8.GetString(myEventHubMessage.Body));
             log.LogInformation("Reading event:" + message.ToString());
 
             // Read values that are replaced or added
-            Dictionary<string, object> tsiUpdate = new Dictionary<string, ob-ject>();
+            Dictionary<string, object> tsiUpdate = new Dictionary<string, object>();
             foreach (var operation in message["patch"]) {
-                if (operation["op"].ToString() == "replace" || opera-tion["op"].ToString() == "add")
+                if (operation["op"].ToString() == "replace" || operation["op"].ToString() == "add")
                 {
                     //Convert from JSON patch path to a flattened property for TSI
                     //Example input: /Front/Temperature
@@ -502,8 +503,8 @@ namespace SampleFunctionsApp
             }
             //Send an update if updates exist
             if (tsiUpdate.Count>0){
-                tsiUpdate.Add("$dtId", myEventHubMes-sage.Properties["cloudEvents:subject"]);
-                await out-putEvents.AddAsync(JsonConvert.SerializeObject(tsiUpdate));
+                tsiUpdate.Add("$dtId", myEventHubMessage.Properties["cloudEvents:subject"]);
+                await outputEvents.AddAsync(JsonConvert.SerializeObject(tsiUpdate));
             }
         }
     }
@@ -557,13 +558,21 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 
 ### View TSI Data
 
-Now, data should be flowing into your Time Series Insights instance, ready to be an-alyzed. Follow the steps below to explore the data coming in.
+Now, data should be flowing into your Time Series Insights instance, ready to be analyzed. Follow the steps below to explore the data coming in.
 
 1. Open your Time Series Insights instance in the [Azure portal](https://ms.portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.TimeSeriesInsights%2Fenvironments).
 1. Visit the Time Series Insights Explorer URL shown in the instance overview.
   ![TSI Environment](./images/tsi-view-environment.png)
-1. In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select vibrationsensorxx, select vibration, and hit add.
+1. In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select GrindingSensor, select Chasis Temperature, and hit add.
 
-1. You should now be seeing the initial temperature readings from your vibra-tion sensor, as shown below. That same temperature reading is updated for sensor2 and machine1, and you can visualize those data streams in tan-dem
+1. You should now be seeing the initial temperature readings from your vibration sensor, as shown below.
 
-1. If you allow the simulation to run for much longer, your visualization will look something like this:
+## Challenge
+
+Try and do the following to enhance the scenario:
+- Add a roasting and molding instances to the Digital Twin
+- Create IoT devices for roasting and molding sensors
+- Simulate IoT devices for roasting and molding sensors
+    - hint: device ID must match $dtid
+    - hint: Azure function is only configured to process Chasis Temperature
+- Visualize the data in TSI
