@@ -349,7 +349,8 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
 1. In Azure Cloud Shell, create a device in IoT Hub with the following command:
 
     ```azurecli
-    az iot hub device-identity create --device-id GrindingSensor --hub-name $dtname -g $rgname
+    az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
+    az iot hub device-identity connection-string show -d GrindingStep --hub-name $dtname
     ```
 
 The output is information about the device that was created. Copy the device connection string for use later.
@@ -374,6 +375,10 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 
 1. Open the file ~\digital-twins-samples\HandsOnLab\SimulatedClientGrindingSensor.js
 1. Find the line **const deviceConnectionString = ""** and update it with the device connection string created earlier.
+
+>[!NOTE]
+>if you lost the device connection string, you can retrieve it by running the command:
+> az iot hub device-identity connection-string show -d GrindingStep --hub-name $dtname -o tsv
 
 ![Device Connection String](./images/update-device-key.png)
 
