@@ -42,8 +42,8 @@ First, we'll need to create and store some variables in the Azure Cloud Shell. T
 #!!for OCP Bootcamp use this: $rgname = $(az group list --query "[? contains(name,'adthol')].name" -o tsv)
 $rgname = "adthol"+ $(get-random -maximum 10000)
 $dtname = $rgname
-$location = eastus
-$username = <account used to log into azure>
+$location = "eastus"
+$username = "<account used to log into azure>"
 $functionstorage = $rgname + "storage"
 $telemetryfunctionname = $rgname + "-telemetryfunction"
 $twinupdatefunctionname = $rgname + "-twinupdatefunction"
