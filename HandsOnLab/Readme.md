@@ -385,9 +385,9 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 1. In the PowerShell window, navigate to the SimulatedClient folder in the repo and run the simulated client
 
     ```Azure CLI
-    cd C:\Users\username\repos\digital-twins-samples\models\SimulatedClient
+    cd C:\Users\username\repos\digital-twins-samples\handsonlab\SimulatedClient
     npm install
-    ./GrindingSensor.js
+    node ./GrindingSensor.js
     ```
 
 1. The simulated device will begin sending data.
