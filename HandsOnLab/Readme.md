@@ -362,7 +362,7 @@ In this section, you configure your IoT Hub to publish events as they occur.
 
 ```Azure CLI
 $iothub=$(az iot hub list -g $rgname --query [].id -o tsv)
-$function=$(az functionapp function show -n $functioname -g $rgname --function-name twinsfunction --query id -o tsv)
+$function=$(az functionapp function show -n $telemetryfunctionname -g $rgname --function-name twinsfunction --query id -o tsv)
 az eventgrid event-subscription create --name IoTHubEvents --source-resource-id $iothub --endpoint $function --endpoint-type azurefunction --included-event-types Microsoft.Devices.DeviceTelemetry
 ```
 
