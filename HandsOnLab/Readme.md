@@ -26,6 +26,7 @@ In this HOL, you will be setting up the end-to-end-architecture below.
 - [C# VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
 - [Azure Function VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
 - [Node.js](https://nodejs.org/en/download/)
+- [Git](https://git-scm.com/downloads)
 
 ## Lab Setup
 
@@ -79,6 +80,9 @@ $functionstorage
     ```azurecli
    az dt create --dt-name $dtname -g $rgname -l $location
     ```
+>[!NOTE]
+>If it's your first time running the az dt command, you'll be prompted to add the extension. Choose 'Y'
+>![az extension](./images/az-dt-extension.png)
 
 1. Assign permissions to Azure Digital Twins
 
