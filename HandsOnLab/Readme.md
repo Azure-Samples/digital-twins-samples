@@ -333,6 +333,8 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
 1. When the deployment finishes, you'll be prompted to Start Streaming Logs
   ![Stream Logs](./images/function-stream-logs.png)
 1. Click on **Stream Logs** to see the messages received by the Azure Function after the IoT Hub setup in the next step. There won't be any messages received until the IoT Hub is setup and a device sends messages.
+1. When prompted to *enable appication logging*, choose Yes.
+    ![Application Logging](./images/application-logging.png)
 1. Alternatively, you can Stream Logs at a later time by right-clicking on the Azure Function in VS Code and choosing **Start Streaming Logs**
   ![Start Streaming Logs](./images/function-stream-logs-extension.png)
   
@@ -361,11 +363,7 @@ In this section, you configure your IoT Hub to publish events as they occur.
 ```Azure CLI
 $iothub=$(az iot hub list -g $rgname --query [].id -o tsv)
 $function=$(az functionapp function show -n $functioname -g $rgname --function-name twinsfunction --query id -o tsv)
-az eventgrid event-subscription create --name IoTHubEvents \
-                                        --source-resource-id $iothub \
-                                       --endpoint $function \
-                                       --endpoint-type azurefunction \
-                                       --included-event-types Microsoft.Devices.DeviceTelemetry
+az eventgrid event-subscription create --name IoTHubEvents --source-resource-id $iothub --endpoint $function --endpoint-type azurefunction --included-event-types Microsoft.Devices.DeviceTelemetry
 ```
 
 At this point, you should see messages showing up in the Azure Function Log Stream that was configured in the previously.  The Azure Function Log Stream will show the telemetry being received from Event Grid and any errors connecting to Azure Digital Twins or updating the Twin.
