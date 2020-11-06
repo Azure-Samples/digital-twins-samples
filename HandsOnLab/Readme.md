@@ -551,7 +551,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
     $tsiname=$rgname+"tsienv"
     az storage account create -g $rgname -n $storage --https-only
     $key=$(az storage account keys list -g $rgname -n $storage --query [0].value --output tsv)
-    az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties "\$dtId" --storage-account-name $storage --storage-management-key $key
+    az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties '$dtId' --storage-account-name $storage --storage-management-key $key
     ```
 
 1. After the TSI environment is provisioned, we need to setup an event source. We will use the Event Hub that receives the processed Twin Change events
@@ -559,7 +559,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
     ```azurecli
     $es_resource_id=$(az eventhubs eventhub show -n tsi-event-hub -g $rgname --namespace $ehnamespace --query id -o tsv)
     $shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $ehnamespace -n RootManageSharedAccessKey --query primaryKey --output tsv)
-    az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name "\$Default"
+    az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name '$Default'
     ```
 
 1. Finally, configure permissions to access the data in the TSI environment.
@@ -573,10 +573,14 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 
 Now, data should be flowing into your Time Series Insights instance, ready to be analyzed. Follow the steps below to explore the data coming in.
 
-1. Open your [Time Series Insights](https://ms.portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.TimeSeriesInsights%2Fenvironments). instance in the Azure portal
-1. Visit the Time Series Insights Explorer URL shown in the instance overview.
-  ![TSI Environment](./images/tsi-view-environment.png)
+1. Open your instance of [Time Series Insights](https://ms.portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.TimeSeriesInsights%2Fenvironments) in the Azure portal
+1. Click on Go to TSI Explorer at the top of the page.
+  ![TSI Environment](./images/tsi-go-to-explorer.png)
 1. In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select GrindingSensor, select Chasis Temperature, and hit add.
+
+>[!TIP] If you don't see data, make sure the simulated client is running:
+>
+>node ./GrindingSensor.js
 
 1. You should now be seeing the initial temperature readings from your vibration sensor, as shown below.
 
