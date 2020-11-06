@@ -398,7 +398,7 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 1. You can see the values in being updated in the Twin GrindingSensor by running the following command
 
     ```azurecli
-     az dt twin show -n $dtname --twin-id GrindingSensor
+     az dt twin show -n $dtname --twin-id GrindingStep
     ```
 
 ## Configure Azure Digital Twin to route data to other environments
@@ -410,11 +410,12 @@ ADT supports sending information about changes to ADT to external systems throug
 1. Create two (2) event hubs.
 
     ```azurecli
-    az eventhubs namespace create --name $dtname --resource-group $rgname -l $location
-    az eventhubs eventhub create --name "twins-event-hub" --resource-group $rgname --namespace-name $dtname
-    az eventhubs eventhub create --name "tsi-event-hub" --resource-group $rgname --namespace-name $dtname
-    az eventhubs eventhub authorization-rule create --rights Listen Send --resource-group $rgname --namespace-name $dtname --eventhub-name "twins-event-hub" --name EHPolicy
-    az eventhubs eventhub authorization-rule create --rights Listen Send --resource-group $rgname --namespace-name $dtname --eventhub-name "tsi-event-hub" --name EHPolicy
+    $ehnamespace = $dtname + "ehnamespace"
+    az eventhubs namespace create --name $ehnamespace --resource-group $rgname -l $location
+    az eventhubs eventhub create --name "twins-event-hub" --resource-group $rgname --namespace-name $ehnamespace
+    az eventhubs eventhub create --name "tsi-event-hub" --resource-group $rgname --namespace-name $ehnamespace
+    az eventhubs eventhub authorization-rule create --rights Listen Send --resource-group $rgname --namespace-name $ehnamespace --eventhub-name "twins-event-hub" --name EHPolicy
+    az eventhubs eventhub authorization-rule create --rights Listen Send --resource-group $rgname --namespace-name $ehnamespace --eventhub-name "tsi-event-hub" --name EHPolicy
     ```
 
 ### Create  ADT Route
@@ -422,7 +423,7 @@ ADT supports sending information about changes to ADT to external systems throug
 1. Create an ADT endpoint
 
     ```azurecli
-    az dt endpoint create eventhub --endpoint-name EHEndpoint --eventhub-resource-group $rgname --eventhub-namespace $dtname --eventhub "twins-event-hub" --eventhub-policy EHPolicy -n $dtname
+    az dt endpoint create eventhub --endpoint-name EHEndpoint --eventhub-resource-group $rgname --eventhub-namespace $ehnamespace --eventhub "twins-event-hub" --eventhub-policy EHPolicy -n $dtname
     ```
 
 1. Create an ADT route
@@ -442,8 +443,8 @@ ADT supports sending information about changes to ADT to external systems throug
 1. Add application config that stores the connection strings needed by the Azure Function
 
     ```azurecli
-    $adtehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $dtname --eventhub-name twins-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
-    $tsiehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $dtname --eventhub-name tsi-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
+    $adtehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $ehnamespace --eventhub-name twins-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
+    $tsiehconnectionstring=$(az eventhubs eventhub authorization-rule keys list --resource-group $rgname --namespace-name $ehnamespace --eventhub-name tsi-event-hub --name EHPolicy --query primaryConnectionString -o tsv)
     az functionapp config appsettings set --settings "EventHubAppSetting-Twins=$adtehconnectionstring" -g $rgname -n $twinupdatefunctionname
     az functionapp config appsettings set --settings "EventHubAppSetting-TSI=$tsiehconnectionstring" -g $rgname -n $twinupdatefunctionname
     ```
@@ -465,12 +466,12 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
     - **Provide a namespace**: Type `SampleFunctionsApp`.
     - **Select setting from local.settings.json**: Hit Enter
     - **Select subscription**: Select the subscription you're using
-    - **Select an event hub namespace**: Choose the namespace created above
+    - **Select an event hub namespace**: Choose the eventhub namespace that begins with `adthol`
     - **Select an event hub**: Choose the event hub created above
     - **Select an event hub policy**: Choose `EHPolicy'
     - **When prompted for a storage account choose**: Skip for now
     - **Select how you would like to open your project**: Choose `Add to workspace`.
-1. Type the following code
+1. Replace the code in the function with the code sample below.
 
 ```C#
 using Microsoft.Azure.EventHubs;
@@ -524,8 +525,10 @@ namespace SampleFunctionsApp
 1. In the VSCode function extension, click on on **Deploy to Function App...**
     ![Choose Deploy to Function App...](./images/deploy-to-function-app.png)
 
-- **Select subscription**: Choose `Concierge Subscription` if you're using the sandbox environment
+- **Select subscription**: Choose your subscription 
 - **Select Function App in Azure**: Choose the function that ends in `twinupdatefunction`.
+- **If prompted to overwrite a previous deployment**: Click `Deploy`
+    ![Overwrite Function](./images/overwrite-twin-function.png)
 
 1. When the deployment finishes, you'll be prompted to Start Streaming Logs
   ![STream Logs](./images/function-stream-logs.png)
@@ -543,6 +546,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 
     ```azurecli
     $storage="adtholtsitorage"+(get-random -maximum 10000)
+    $tsiname=$rgname+"tsienv"
     az storage account create -g $rgname -n $storage --https-only
     $key=$(az storage account keys list -g $rgname -n $storage --query [0].value --output tsv)
     az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties "\$dtId" --storage-account-name $storage --storage-management-key $key
@@ -551,8 +555,8 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 1. After the TSI environment is provisioned, we need to setup an event source. We will use the Event Hub that receives the processed Twin Change events
 
     ```azurecli
-    $es_resource_id=$(az eventhubs eventhub show -n tsi-event-hub -g $rgname --namespace $dtname --query id -o tsv)
-    $shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $dtname -n RootManageSharedAccessKey --query primaryKey --output tsv)
+    $es_resource_id=$(az eventhubs eventhub show -n tsi-event-hub -g $rgname --namespace $ehnamespace --query id -o tsv)
+    $shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $ehnamespace -n RootManageSharedAccessKey --query primaryKey --output tsv)
     az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name "\$Default"
     ```
 
