@@ -16,7 +16,7 @@ namespace DeviceSimulator
         /// Please replace with correct connection string value
         /// The connection string could be got from Azure IoT Hub -> Shared access policies -> iothubowner -> Connection String:
         /// </summary>
-        private const string iotHubConnectionString = "<your-hub-connection-string>=";
+        private const string iotHubConnectionString = "<your-hub-connection-string>";
 
         /// <summary>
         /// Please replace with correct device connection string
