@@ -467,11 +467,12 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
     - **Select setting from local.settings.json**: Hit Enter
     - **Select subscription**: Select the subscription you're using
     - **Select an event hub namespace**: Choose the eventhub namespace that begins with `adthol`
-    - **Select an event hub**: Choose the event hub created above
-    - **Select an event hub policy**: Choose `EHPolicy'
+    - **Select an event hub**: Choose `twins-event-hub`
+    - **Select an event hub policy**: Choose `EHPolicy`
     - **When prompted for a storage account choose**: Skip for now
     - **Select how you would like to open your project**: Choose `Add to workspace`.
-1. Replace the code in the function with the code sample below.
+1. Open the file TwinsFunction.cs
+1. Replace the code with the code sample below.
 
 ```C#
 using Microsoft.Azure.EventHubs;
@@ -533,10 +534,11 @@ namespace SampleFunctionsApp
 1. When the deployment finishes, you'll be prompted to Start Streaming Logs
   ![STream Logs](./images/function-stream-logs.png)
 1. Click on **Stream Logs** to see the Twin Update messages received by the Azure Function.
-1. Alternatively, you can Stream Logs at a later time by right-clicking on the Azure Function in VS Code and choosing **Start Streaming Logs**
+
+- Alternatively, you can Stream Logs at a later time by right-clicking on the Azure Function in VS Code and choosing **Start Streaming Logs**
   ![Choose Deploy to Function App...](./images/function-stream-logs-extension.png)
 
-At this point, Azure Digital Twins should be sending the Twin Updates it receives to an Event Hub whose events are processed by the Azure Function.  The Azure Function formats the events and published them to another Event Hub where can be ingested by Time Series Insights. 
+At this point, Azure Digital Twins should be sending the Twin Updates it receives to an Event Hub whose events are processed by the Azure Function.  The Azure Function formats the events and published them to another Event Hub where can be ingested by Time Series Insights.
 
 ## Visualize Data using Time Series Insights
 
@@ -563,7 +565,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 1. Finally, configure permissions to access the data in the TSI environment.
 
     ```azurecli
-    $id=$(az ad user show --id username --query objectId -o tsv)
+    $id=$(az ad user show --id $username --query objectId -o tsv)
     az timeseriesinsights access-policy create -g $rgname --environment-name $tsiname -n access1 --principal-object-id $id  --description "some description" --roles Contributor Reader
     ```
 
