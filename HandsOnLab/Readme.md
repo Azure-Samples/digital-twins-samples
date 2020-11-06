@@ -573,7 +573,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 
 Now, data should be flowing into your Time Series Insights instance, ready to be analyzed. Follow the steps below to explore the data coming in.
 
-1. Open your Time Series Insights instance in the [Azure portal](https://ms.portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.TimeSeriesInsights%2Fenvironments).
+1. Open your [Time Series Insights](https://ms.portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.TimeSeriesInsights%2Fenvironments). instance in the Azure portal
 1. Visit the Time Series Insights Explorer URL shown in the instance overview.
   ![TSI Environment](./images/tsi-view-environment.png)
 1. In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select GrindingSensor, select Chasis Temperature, and hit add.
