@@ -534,7 +534,7 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
     - **Select an event hub policy**: Choose `EHPolicy`
     - **When prompted for a storage account choose**: Skip for now
     - **Select how you would like to open your project**: Choose `Add to workspace`.
-1. Open the file TwinsFunction.cs
+1. Open the file TSIFunction.cs
 1. Replace the code with the code sample below.
 
 ```C#
