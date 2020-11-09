@@ -2,7 +2,7 @@
 
 ## Overview
 
-Suppose you work at a Chocolate Manufacturing Factory as Technical Specialist to support The Chocolate Factory line operators. You are commissioned to launch a new near real-time dashboard to support operators monitor running operations for the Roasting, Grinding and Molding processes to answer questions such as: 
+Suppose you work at a Chocolate Manufacturing Factory as Technical Specialist to support The Chocolate Factory line operators. You are commissioned to launch a new near real-time dashboard to support operators monitor running operations for the Fanning/Roasting, Grinding and Moulding processes to answer questions such as: 
 •	find all time windows when temperature during roasting is >150°F in the previous 24 hours and trace back events in ADT leading to that
 •	Calculate the average Grinding vibration in the last 2 minutes to ensure the process meets manufacturing quality standards
 •	Find all incidents with unusually higher than normal molding temperature in the previous 5 days
@@ -32,7 +32,7 @@ In this HOL, you will be setting up the end-to-end-architecture below.
 
 ### Setup Variables
 
-First, we'll need to create and store some variables in the Azure Cloud Shell. This will make running the commands needed in the subsequent units easier and avoid mistakes from typos.
+First, we'll need to create and store some variables. This will make running the commands needed in the subsequent steps easier and avoid mistakes from typos.
 
 1. If you're using the Azure Cloud Shell (not recommended) make sure the CLI is set to **Powershell**
 1. If you're on your local machine, open a PowerShell console
@@ -40,15 +40,16 @@ First, we'll need to create and store some variables in the Azure Cloud Shell. T
 1. Edit the below as needed then copy and paste the following into the Powershell window
 
 ```azurecli
-#!!for OCP Bootcamp use this: $rgname = $(az group list --query "[? contains(name,'adthol')].name" -o tsv)
-$rgname = "adthol"+ $(get-random -maximum 10000)
+$rgname = "adtholrg"
+$randomname = $rgname + $(get-random -maximum 10000)
 $dtname = $rgname
 $location = "eastus"
 $username = "<account used to log into azure>"
-$functionstorage = $rgname + "storage"
-$telemetryfunctionname = $rgname + "-telemetryfunction"
-$twinupdatefunctionname = $rgname + "-twinupdatefunction"
+$functionstorage = $random + "storage"
+$telemetryfunctionname = $random + "-telemetryfunction"
+$twinupdatefunctionname = $random + "-twinupdatefunction"
 
+#!!This command will fail for OCP Bootcamp participants since group already exists
 az group create -n $rgname -l $location
 
 $rgname
@@ -177,6 +178,15 @@ You now have an Azure Digital Twin of a factory production line! You can view yo
 
 ![ADT Explorer](./images/adt-explorer.png)
 
+### Challenge: ADT Modeling
+
+To meet the goal stated at the beginning of this lab, our digital twin will need models and instances of Roasting and Molding.
+
+After this lab is complete, try and add the other twin models and instances and relationships.
+
+- ProductionStepMoulding.json
+- ProductionStepFanning.json
+
 ## Setup Function to Ingest Events from IoT Hub
 
 We can ingest data into Azure Digital Twins through external compute resources, such as an Azure Function, that receives the data and uses the Digital Twins SDK to set properties.
@@ -225,7 +235,7 @@ In this section, we'll create a system-managed identity and assign the function 
 
 ### Create an Azure Functions app in Visual Studio Code
 
-In this section, you use Visual Studio Code to create a local Azure Functions project in your chosen language. Later in this article, you'll publish your function code to Azure.
+In this section, you use Visual Studio Code to create a local Azure Functions project in your chosen language. The function will be triggered by EventGrid.
 
 1. Choose the Azure icon in the Activity bar, then in the **Azure: Functions** area, select the **Create new project...** icon.
 
@@ -243,7 +253,7 @@ In this section, you use Visual Studio Code to create a local Azure Functions pr
     - **When prompted for a storage account choose**: Skip for now
     - **Select how you would like to open your project**: Choose `Add to workspace`.
 
-### Install Nuget package
+### Install Nuget packages
 
 In the Visual Studio Code Terminal, add the required Nuget packages by typing the following commands:
 
@@ -255,6 +265,8 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
 
 ### Write an Azure function with an Event Grid trigger
 
+Now we'll add code that uses the ADT SDK to update a digital twin.
+
 1. In VS Code, open the file TwinsFunction.cs
 1. Replace the code in the Function App template with the sample provided:
 
@@ -262,63 +274,82 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
 >The namespace and function name must match.  If you changed them in the previous steps, make sure to do the same in the code sample.
 
 ```csharp
-    using Azure;
-    using Azure.Core.Pipeline;
-    using Azure.DigitalTwins.Core;
-    using Azure.Identity;
-    using Microsoft.Azure.EventGrid.Models;
-    using Microsoft.Azure.WebJobs;
-    using Microsoft.Azure.WebJobs.Extensions.EventGrid;
-    using Microsoft.Extensions.Logging;
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
-    using System;
-    using System.Net.Http;
-    
-    namespace My.Function
+using Azure;
+using Azure.Core.Pipeline;
+using Azure.DigitalTwins.Core;
+using Azure.Identity;
+using Microsoft.Azure.EventGrid.Models;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.EventGrid;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Net.Http;
+
+namespace My.Function
+{
+
+    public class TwinsFunction
     {
-        public class TwinsFunction
+        //Your Digital Twin URL is stored in an application setting in Azure Functions
+        private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
+        private static readonly HttpClient httpClient = new HttpClient();
+
+        [FunctionName("TwinsFunction")]
+        public async void Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
         {
-            //Your Digital Twin URL is stored in an application setting in Azure Functions
-            private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
-            private static readonly HttpClient httpClient = new HttpClient();
-    
-            [FunctionName("TwinsFunction")]
-            public async void Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
+            log.LogInformation(eventGridEvent.Data.ToString());
+            if (adtInstanceUrl == null) log.LogError("Application setting \"ADT_SERVICE_URL\" not set");
+            try
             {
-                log.LogInformation(eventGridEvent.Data.ToString());
-                if (adtInstanceUrl == null) log.LogError("Application setting \"ADT_SERVICE_URL\" not set");
-                try
+                //Authenticate with Digital Twins
+                ManagedIdentityCredential cred = new ManagedIdentityCredential("https://digitaltwins.azure.net");
+                DigitalTwinsClient client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
+                log.LogInformation($"ADT service client connection created.");
+                if (eventGridEvent != null && eventGridEvent.Data != null)
                 {
-                    //Authenticate with Digital Twins
-                    ManagedIdentityCredential cred = new ManagedIdentityCredential("https://digitaltwins.azure.net");
-                    DigitalTwinsClient client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
-                    log.LogInformation($"ADT service client connection created.");
-                    if (eventGridEvent != null && eventGridEvent.Data != null)
-                    {
-                        log.LogInformation(eventGridEvent.Data.ToString());
-    
-                        // Reading deviceId and temperature for IoT Hub JSON
-                        JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
-                        string deviceId = (string)deviceMessage["systemProperties"]["iothub-connection-device-id"];
-                        var temperature = deviceMessage["body"]["ChasisTemperature"];
-                        
-                        log.LogInformation($"Device:{deviceId} ChasisTemperature is:{temperature}");
-    
-                        //Update twin using device temperature
-                        var updateTwinData = new JsonPatchDocument();
-                        updateTwinData.AppendAdd("/ChasisTemperature", temperature.Value<double>());
-                        await client.UpdateDigitalTwinAsync(deviceId, updateTwinData);
+                    log.LogInformation(eventGridEvent.Data.ToString());
+
+                    // Reading deviceId and temperature for IoT Hub JSON
+                    JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
+                    string deviceId = (string)deviceMessage["systemProperties"]["iothub-connection-device-id"];
+                    string deviceType = (string)deviceMessage["body"]["DeviceType"];
+                    log.LogInformation($"Device:{deviceId} DeviceType is:{deviceType}");
+                     var updateTwinData = new JsonPatchDocument();
+                    switch (deviceType){
+                        case "FanningSensor":
+                            updateTwinData.AppendAdd("/ChasisTemperature", deviceMessage["body"]["ChasisTemperature"].Value<double>());
+                            updateTwinData.AppendAdd("/FanSpeed", deviceMessage["body"]["Force"].Value<double>());
+                            updateTwinData.AppendAdd("/RoastingTime", deviceMessage["body"]["RoastingTime"].Value<int>());
+                            updateTwinData.AppendAdd("/PowerUsage", deviceMessage["body"]["PowerUsage"].Value<double>());
+                            await client.UpdateDigitalTwinAsync(deviceId, updateTwinData);
+                        break;
+                        case "GrindingSensor":
+                            updateTwinData.AppendAdd("/ChasisTemperature", deviceMessage["body"]["ChasisTemperature"].Value<double>());
+                            updateTwinData.AppendAdd("/Force", deviceMessage["body"]["Force"].Value<double>());
+                            updateTwinData.AppendAdd("/PowerUsage", deviceMessage["body"]["PowerUsage"].Value<double>());
+                            updateTwinData.AppendAdd("/Vibration", deviceMessage["body"]["Vibration"].Value<double>());
+                            await client.UpdateDigitalTwinAsync(deviceId, updateTwinData);
+                        break;
+                        case "MouldingSensor":
+                            updateTwinData.AppendAdd("/ChasisTemperature", deviceMessage["body"]["ChasisTemperature"].Value<double>());
+                            updateTwinData.AppendAdd("/PowerUsage", deviceMessage["body"]["PowerUsage"].Value<double>());
+                            await client.UpdateDigitalTwinAsync(deviceId, updateTwinData);
+                        break;
                     }
+
                 }
-                catch (Exception e)
-                {
-                    log.LogError(e.Message);
-                }
-    
             }
+            catch (Exception e)
+            {
+                log.LogError(e.Message);
+            }
+
         }
     }
+
+}
 ```
 
 ### Publish the function app to Azure
@@ -340,13 +371,17 @@ In the Visual Studio Code Terminal, add the required Nuget packages by typing th
   
 ## Setup IoT Hub
 
+The data our Digital Twin needs comes from IoT devices that send their data to IoT Hub.  In this section, we'll create an IoT Hub and configure it to publish device telemetry to EventGrid.
+
 1. Run the following [command to create an IoT hub](https://docs.microsoft.com/cli/azure/iot/hub#az-iot-hub-create) in your resource group, using a globally unique name for your IoT hub:
 
    ```azurecli-interactive
-   az iot hub create --name $dtname --resource-group $rgname --sku S1
+   az iot hub create --name $dtname --resource-group $rgname --sku S1 -l $location
    ```
 
-1. In Azure Cloud Shell, create a device in IoT Hub with the following command:
+1. In Azure Cloud Shell, create a device in IoT Hub with the following command.
+
+> Note that the Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
 
     ```azurecli
     az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
@@ -387,7 +422,7 @@ At this point, you should see messages showing up in the Azure Function Log Stre
     ```Azure CLI
     cd C:\Users\username\repos\digital-twins-samples\handsonlab\SimulatedClient
     npm install
-    node ./GrindingSensor.js
+    node ./Sensor.js
     ```
 
 1. The simulated device will begin sending data.
@@ -395,11 +430,22 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 
 ### Validate Azure Digital Twin is receiving data
 
-1. You can see the values in being updated in the Twin GrindingSensor by running the following command
+1. Look at the values in being updated in the Twin GrindingSensor by running the following command
 
     ```azurecli
      az dt twin show -n $dtname --twin-id GrindingStep
     ```
+
+### Challenge: Simulate Fanning / Roasting and Moulding devices
+
+The Sensor.js file can be changed to send data as additional devices. The Azure Function has logic that evaluates the device type specified in the payload.  Change the value stored in deviceType and deviceConection string to send as Fanning and Moulding sensors.
+
+![Sensor Type](./images/change-sensor.png)
+
+![Device Connection String](./images/update-device-key.png)
+
+> HINT: Remember that the Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
+>
 
 ## Configure Azure Digital Twin to route data to other environments
 
@@ -462,8 +508,8 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
 1. Provide the following information at the prompts:
     - **Select a language for your function project**: Choose `C#`.
     - **Select a template for your project's first function**: Choose `EventHubTrigger`.
-    - **Provide a function name**: Type `TwinsFunction`.
-    - **Provide a namespace**: Type `SampleFunctionsApp`.
+    - **Provide a function name**: Type `TSIFunction`.
+    - **Provide a namespace**: Type `TSIFunctionsApp`.
     - **Select setting from local.settings.json**: Hit Enter
     - **Select subscription**: Select the subscription you're using
     - **Select an event hub namespace**: Choose the eventhub namespace that begins with `adthol`
@@ -484,7 +530,7 @@ using System.Threading.Tasks;
 using System.Text;
 using System.Collections.Generic;
 
-namespace SampleFunctionsApp
+namespace TSIFunctionsApp
 {
     public static class ProcessDTUpdatetoTSI
     { 
@@ -526,7 +572,7 @@ namespace SampleFunctionsApp
 1. In the VSCode function extension, click on on **Deploy to Function App...**
     ![Choose Deploy to Function App...](./images/deploy-to-function-app.png)
 
-- **Select subscription**: Choose your subscription 
+- **Select subscription**: Choose your subscription
 - **Select Function App in Azure**: Choose the function that ends in `twinupdatefunction`.
 - **If prompted to overwrite a previous deployment**: Click `Deploy`
     ![Overwrite Function](./images/overwrite-twin-function.png)
@@ -548,7 +594,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
 
     ```azurecli
     $storage="adtholtsitorage"+(get-random -maximum 10000)
-    $tsiname=$rgname+"tsienv"
+    $tsiname=$random+"tsienv"
     az storage account create -g $rgname -n $storage --https-only
     $key=$(az storage account keys list -g $rgname -n $storage --query [0].value --output tsv)
     az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties '$dtId' --storage-account-name $storage --storage-management-key $key
@@ -576,20 +622,16 @@ Now, data should be flowing into your Time Series Insights instance, ready to be
 1. Open your instance of [Time Series Insights](https://ms.portal.azure.com/#blade/HubsExtension/BrowseResourceBlade/resourceType/Microsoft.TimeSeriesInsights%2Fenvironments) in the Azure portal
 1. Click on Go to TSI Explorer at the top of the page.
   ![TSI Environment](./images/tsi-go-to-explorer.png)
-1. In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select GrindingSensor, select Chasis Temperature, and hit add.
+1. In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select GrindingStep, select Chasis Temperature, and hit add.
+    ![TSI Explorer](./images/tsi-plot-data.png)
 
->[!TIP] If you don't see data, make sure the simulated client is running:
->
->node ./GrindingSensor.js
+    >[!TIP] If you don't see data, make sure the simulated client is running:
+    >
+    >node ./Sensor.js
 
-1. You should now be seeing the initial temperature readings from your vibration sensor, as shown below.
+1. You should now be seeing the Chasis Temperature readings from a device named GrindingStep, as shown below.
+![TSI Explorer](./images/tsi-data.png)
 
-## Challenge
+## Challenge: Update Status of Production Line
 
-Try and do the following to enhance the scenario:
-- Add a roasting and molding instances to the Digital Twin
-- Create IoT devices for roasting and molding sensors
-- Simulate IoT devices for roasting and molding sensors
-    - hint: device ID must match $dtid
-    - hint: Azure function is only configured to process Chasis Temperature
-- Visualize the data in TSI
+Digital Twins
