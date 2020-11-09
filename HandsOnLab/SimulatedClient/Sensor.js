@@ -45,7 +45,7 @@ function generateMessage () {
   const powerUsage = 60 + (Math.random() * 20); // range: [60, 80]
   const force = 300 + (Math.random() * 10); // range: [300, 400]
   const vibration = 99 + (Math.random() * 10); // range: [99, 199]
-  const roastingTime = 30 + (Math.floor(Math.random() * 100) //range [30, 50]
+  const roastingTime = 30 + (Math.floor(Math.random() * 100); //range [30, 50]
   const data = JSON.stringify({ DeviceType: deviceType, FanSpeed: fanSpeed, Force: force, ChasisTemperature: temperature, PowerUsage: powerUsage, Vibration:vibration, RoastingTime: roastingTime });
   const message = new Message(data);
   message.properties.add('vibrationAlert', (vibration > 200) ? 'true' : 'false');
