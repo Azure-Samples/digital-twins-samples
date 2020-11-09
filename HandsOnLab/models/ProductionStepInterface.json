@@ -1,0 +1,94 @@
+[
+  {
+    "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step;2",
+    "@type": "Interface",
+    "displayName": "Factory Production Steps - Interface Model",
+    "@context": "dtmi:dtdl:context;2",
+    "contents": [
+      {
+        "@type": "Property",
+        "name": "StepId",
+        "schema": "string"
+      },
+      {
+        "@type": "Property",
+        "name": "StepName",
+        "schema": "string"
+      },
+      {
+        "@type": ["Property"],
+        "name": "StartTime",
+        "schema": "dateTime"
+      },
+      {
+        "@type": "Property",
+        "name": "FinalStep",
+        "schema": "boolean"
+      },
+      {
+        "@type": "Property",
+        "name": "OperationStatus",
+        "schema": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step:status;1",
+        "writable": true
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step:rel_step_link;1",
+        "name": "rel_step_link",
+        "displayName": "StepLink",
+        "properties": [
+          {
+            "@type": "Property",
+            "name": "FinalStep",
+            "schema": "boolean"
+          }
+        ]
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step:rel_contains_equipment;1",
+        "name": "rel_contains_equipment",
+        "displayName": "Contains Equipment",
+        "target": "dtmi:com:microsoft:iot:e2e:digital_factory:equipment;1",
+        "properties": [
+          {
+            "@type": "Property",
+            "name": "status",
+            "schema": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step:status;1"
+          }
+        ]
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step:rel_connected_devices;1",
+        "name": "rel_connected_devices",
+        "displayName": "Has Connected Devices",
+        "properties" : [ 
+          {
+            "@type": "Property",
+            "name" : "DeviceStatus",
+            "schema": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step:status;1"
+          }
+        ]
+      }
+    ],
+
+    "schemas":  {
+      "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step:status;1",
+      "@type": "Enum",
+      "valueSchema": "integer",
+      "enumValues": [
+        {
+          "name": "offline",
+          "displayName": "Offline",
+          "enumValue": 1
+        },
+        {
+          "name": "online",
+          "displayName": "Online",
+          "enumValue": 2
+        }
+      ]
+    }
+  }
+]

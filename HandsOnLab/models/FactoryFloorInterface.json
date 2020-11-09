@@ -1,0 +1,55 @@
+[
+  {
+    "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:floor;1",
+    "@type": "Interface",
+    "displayName": "Factory Floor - Interface Model",
+    "@context": "dtmi:dtdl:context;2",
+    "contents": [
+      {
+        "@type": "Property",
+        "name": "FloorId",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@type": "Property",
+        "name": "FloorName",
+        "schema": "string",
+        "writable": true
+      },
+      {
+        "@type": ["Property", "Temperature"],
+        "name": "Temperature",
+        "schema": "double",
+        "unit": "degreeFahrenheit",
+        "writable": true
+      },
+      {
+        "@type": "Property",
+        "name": "ComfortIndex",
+        "schema": "double"
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:floor:rel_has_rooms;1",
+        "name": "rel_has_rooms",
+        "displayName": "Floor Has Rooms",
+        "target": "dtmi:com:microsoft:iot:e2e:digital_factory:room;1"
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:floor:rel_has_zones;1",
+        "name": "rel_has_zones",
+        "displayName": "Floor Has zones",
+        "target": "dtmi:com:microsoft:iot:e2e:digital_factory:zone;1"
+      },
+      {
+        "@type": "Relationship",
+        "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:floor:rel_runs_lines;1",
+        "name": "rel_runs_lines",
+        "displayName": "Runs Production lines",
+        "target": "dtmi:com:microsoft:iot:e2e:digital_factory:production_line;1"
+      }
+    ]
+  }
+]

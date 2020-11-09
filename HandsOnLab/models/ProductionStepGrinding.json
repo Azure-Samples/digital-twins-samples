@@ -1,0 +1,42 @@
+[
+  {
+    "@id": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step_grinding;1",
+    "@type": "Interface",
+    "extends": "dtmi:com:microsoft:iot:e2e:digital_factory:production_step;2",
+    "displayName": "Factory Production Step: Grinding/Crushing - Interface Model",
+    "@context": "dtmi:dtdl:context;2",
+    "contents": [
+      {
+        "@type": ["Property", "Temperature"],
+        "name": "ChasisTemperature",
+        "schema": "double",
+        "unit": "degreeFahrenheit",
+        "writable": true
+      },
+      {
+        "@type": ["Property", "TimeSpan"],
+        "name": "GrindingTime",
+        "schema": "integer",
+        "unit": "minute"
+      },
+      {
+        "@type": ["Property", "Power"],
+        "name": "PowerUsage",
+        "schema": "double",
+        "unit" : "kilowatt"
+      },
+      {
+        "@type": ["Property", "Force"],
+        "name": "Force",
+        "schema": "double",
+        "unit": "pound"
+      },
+      {
+        "@type": ["Property", "Frequency"],
+        "name": "Vibration",
+        "schema": "double",
+        "unit": "hertz"
+      }
+    ]
+  }
+]
