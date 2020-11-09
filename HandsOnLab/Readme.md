@@ -634,4 +634,5 @@ Now, data should be flowing into your Time Series Insights instance, ready to be
 
 ## Challenge: Update Status of Production Line
 
-Digital Twins
+In the current scenario, the status of the production line is a property in the digital twin.  Think about how the status should be determined and updated using what you've learned.
+![Production Line Status](./images/challange-prod-line-status.png)
