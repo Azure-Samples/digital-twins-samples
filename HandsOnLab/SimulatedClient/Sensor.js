@@ -14,7 +14,7 @@ const Message = require('azure-iot-device').Message;
 
 // String containing Hostname, Device Id & Device Key in the following formats:
 //  "HostName=<iothub_host_name>;DeviceId=<device_id>;SharedAccessKey=<device_key>"
-const deviceConnectionString = ""
+const deviceConnectionString = "";
 let sendInterval;
 
 function disconnectHandler () {
