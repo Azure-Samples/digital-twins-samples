@@ -47,7 +47,7 @@ namespace SampleFunctionsApp
 
                 //Update twin using device temperature
                 var updateTwinData = new JsonPatchDocument();
-                updateTwinData.AppendAdd("/Temperature", temperature.Value<double>());
+                updateTwinData.AppendReplace("/Temperature", temperature.Value<double>());
                 await client.UpdateDigitalTwinAsync(deviceId, updateTwinData);
             }
         }

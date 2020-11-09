@@ -57,7 +57,7 @@ namespace SampleFunctionsApp
             try
             {
                 var updateTwinData = new JsonPatchDocument();
-                updateTwinData.AppendAdd(propertyPath, value);
+                updateTwinData.AppendReplace(propertyPath, value);
 
                 log.LogInformation($"UpdateTwinPropertyAsync sending {updateTwinData}");
                 await client.UpdateDigitalTwinAsync(twinId, updateTwinData);
