@@ -425,7 +425,7 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 
 ### Send data from a simulated device
 
-1. Open the file ~\digital-twins-samples\HandsOnLab\SimulatedClientGrindingSensor.js
+1. Open the file ~\digital-twins-samples\HandsOnLab\SimulatedClient\Sensor.js
 1. Find the line **const deviceConnectionString = ""** and update it with the device connection string created earlier.
 
 >[!NOTE]
