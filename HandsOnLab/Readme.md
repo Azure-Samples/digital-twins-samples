@@ -41,8 +41,8 @@ First, we'll need to create and store some variables. This will make running the
 
 ```azurecli
 $rgname = "adtholrg"
-$randomname = $rgname + $(get-random -maximum 10000)
-$dtname = $rgname
+$random = "adthol" + $(get-random -maximum 10000)
+$dtname = $random + "-digitaltwin"
 $location = "eastus"
 $username = "<account used to log into azure>"
 $functionstorage = $random + "storage"
