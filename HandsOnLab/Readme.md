@@ -36,7 +36,17 @@ First, we'll need to create and store some variables. This will make running the
 
 1. If you're using the Azure Cloud Shell (not recommended) make sure the CLI is set to **Powershell**
 1. If you're on your local machine, open a PowerShell console
-1. Log into Azure by running the command: **az login**
+1. Log into Azure
+
+```azurecli
+az login
+```
+
+- Ensure you are logged into the right account by running the command below
+    ```azurecli
+    az account show
+    ```
+
 1. Edit the below as needed then copy and paste the following into the Powershell window
 
 ```azurecli
@@ -236,6 +246,13 @@ In this section, we'll create a system-managed identity and assign the function 
 ### Create an Azure Functions app in Visual Studio Code
 
 In this section, you use Visual Studio Code to create a local Azure Functions project in your chosen language. The function will be triggered by EventGrid.
+
+1. Ensure you are signed into Azure using the correct account by examining the logon at the lower-right
+![VSCode Logon](./images/vscode-logon.png)
+- If you need to change your account:
+    - Bring up the VS Code command pallet(Ctrl+Shift+P) and enter Azure: Sign out
+    - Then run Azure: Sign in
+    ![VS Code Logon](./images/vscode-azure-account.png)
 
 1. Choose the Azure icon in the Activity bar, then in the **Azure: Functions** area, select the **Create new project...** icon.
 
