@@ -612,9 +612,9 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
     ```azurecli
     $storage="adtholtsitorage"+(get-random -maximum 10000)
     $tsiname=$random+"tsienv"
-    az storage account create -g $rgname -n $storage --https-only
+    az storage account create -g $rgname -n $storage --https-only -l $location
     $key=$(az storage account keys list -g $rgname -n $storage --query [0].value --output tsv)
-    az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties '$dtId' --storage-account-name $storage --storage-management-key $key
+    az timeseriesinsights environment longterm create -g $rgname -n $tsiname --location $location --sku-name L1 --sku-capacity 1 --data-retention 7 --time-series-id-properties '$dtId' --storage-account-name $storage --storage-management-key $key -l $location
     ```
 
 1. After the TSI environment is provisioned, we need to setup an event source. We will use the Event Hub that receives the processed Twin Change events
