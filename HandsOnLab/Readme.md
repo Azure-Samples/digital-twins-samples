@@ -72,7 +72,7 @@ $functionstorage
 ```
 > [!NOTE]
 >
->**Save these values for use later in notepad or another similar tool**
+>Save these values for use later in notepad or another similar tool
 
 ## Clone GitHub Repo
 
@@ -81,7 +81,7 @@ $functionstorage
     ```azurecli
     mkdir c:\users\username\repos
     cd c:\users\username\repos
-    git clone https://github.com/Teodelas/digital-twins-samples.git
+    git clone https://github.com/Azure-Samples/digital-twins-samples/
     ```
 
 ## Use the CLI to deploy ADT
@@ -102,7 +102,8 @@ $functionstorage
     ```
 ### Collect instance values
 
->[!NOTE] Save these outputs below to notepad for use later
+>[!NOTE]
+> Save these outputs below to notepad for use later
 >
 1. Get the hostname of the Digital Twins instance. Copy the output to notepad for use later.
 
@@ -398,7 +399,7 @@ The data our Digital Twin needs comes from IoT devices that send their data to I
 
 1. In Azure Cloud Shell, create a device in IoT Hub with the following command.
 
-> Note that the Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
+> [!Note] The Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
 
     ```azurecli
     az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
@@ -418,11 +419,6 @@ $iothub=$(az iot hub list -g $rgname --query [].id -o tsv)
 $function=$(az functionapp function show -n $telemetryfunctionname -g $rgname --function-name twinsfunction --query id -o tsv)
 az eventgrid event-subscription create --name IoTHubEvents --source-resource-id $iothub --endpoint $function --endpoint-type azurefunction --included-event-types Microsoft.Devices.DeviceTelemetry
 ```
-
-At this point, you should see messages showing up in the Azure Function Log Stream that was configured in the previously.  The Azure Function Log Stream will show the telemetry being received from Event Grid and any errors connecting to Azure Digital Twins or updating the Twin.
-
-   ![Log Stream](./images/LogStream.png)
-
 ### Send data from a simulated device
 
 1. Open the file ~\digital-twins-samples\HandsOnLab\SimulatedClient\Sensor.js
@@ -444,6 +440,9 @@ At this point, you should see messages showing up in the Azure Function Log Stre
 
 1. The simulated device will begin sending data.
 
+At this point, you should see messages showing up in the Azure Function Log Stream that was configured previously.  The Azure Function Log Stream will show the telemetry being received from Event Grid and any errors connecting to Azure Digital Twins or updating the Twin.
+
+   ![Log Stream](./images/LogStream.png)
 
 ### Validate Azure Digital Twin is receiving data
 
@@ -461,8 +460,7 @@ The Sensor.js file can be changed to send data as additional devices. The Azure 
 
 ![Device Connection String](./images/update-device-key.png)
 
-> HINT: Remember that the Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
->
+> [!NOTE] Remember that the Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
 
 ## Configure Azure Digital Twin to route data to other environments
 
@@ -499,9 +497,9 @@ ADT supports sending information about changes to ADT to external systems throug
 
 1. Create an Azure Function
 
-```azurecli
-    az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $twinupdatefunctionname --storage-account  $functionstorage
-  ```
+    ```azurecli
+        az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $twinupdatefunctionname --storage-account  $functionstorage
+      ```
 
 1. Add application config that stores the connection strings needed by the Azure Function
 
@@ -589,16 +587,16 @@ namespace TSIFunctionsApp
 1. In the VSCode function extension, click on on **Deploy to Function App...**
     ![Choose Deploy to Function App...](./images/deploy-to-function-app.png)
 
-- **Select subscription**: Choose your subscription
-- **Select Function App in Azure**: Choose the function that ends in `twinupdatefunction`.
-- **If prompted to overwrite a previous deployment**: Click `Deploy`
+    - **Select subscription**: Choose your subscription
+    - **Select Function App in Azure**: Choose the function that ends in `twinupdatefunction`.
+    - **If prompted to overwrite a previous deployment**: Click `Deploy`
     ![Overwrite Function](./images/overwrite-twin-function.png)
 
 1. When the deployment finishes, you'll be prompted to Start Streaming Logs
   ![STream Logs](./images/function-stream-logs.png)
 1. Click on **Stream Logs** to see the Twin Update messages received by the Azure Function.
 
-- Alternatively, you can Stream Logs at a later time by right-clicking on the Azure Function in VS Code and choosing **Start Streaming Logs**
+    - Alternatively, you can Stream Logs at a later time by right-clicking on the Azure Function in VS Code and choosing **Start Streaming Logs**
   ![Choose Deploy to Function App...](./images/function-stream-logs-extension.png)
 
 At this point, Azure Digital Twins should be sending the Twin Updates it receives to an Event Hub whose events are processed by the Azure Function.  The Azure Function formats the events and published them to another Event Hub where can be ingested by Time Series Insights.
@@ -642,9 +640,11 @@ Now, data should be flowing into your Time Series Insights instance, ready to be
 1. In the explorer, you will see one Twin from Azure Digital Twins shown on the left. Select GrindingStep, select Chasis Temperature, and hit add.
     ![TSI Explorer](./images/tsi-plot-data.png)
 
-    >[!TIP] If you don't see data, make sure the simulated client is running:
+    >[!TIP] If you don't see data:
     >
-    >node ./Sensor.js
+    > - make sure the simulated client is running:
+    > - Check for errors in the  
+    > - Check for errors in the 
 
 1. You should now be seeing the Chasis Temperature readings from a device named GrindingStep, as shown below.
 ![TSI Explorer](./images/tsi-data.png)
