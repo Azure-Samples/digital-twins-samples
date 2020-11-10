@@ -16,7 +16,7 @@ namespace DeviceSimulator
         /// Please replace with correct connection string value
         /// The connection string could be got from Azure IoT Hub -> Shared access policies -> iothubowner -> Connection String:
         /// </summary>
-        private const string iotHubConnectionString = "<your-hub-connection-string>=";
+        private const string iotHubConnectionString = "<your-hub-connection-string>";
 
         /// <summary>
         /// Please replace with correct device connection string
@@ -56,9 +56,11 @@ namespace DeviceSimulator
                     Temperature = currentTemperature
                 };
                 var messageString = JsonSerializer.Serialize(telemetryDataPoint);
-                var message = new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(messageString));
-                message.ContentType = "application/json";
-                message.ContentEncoding = "utf-8";
+                var message = new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(messageString))
+                {
+                    ContentType = "application/json",
+                    ContentEncoding = "utf-8"
+                };
                 await deviceClient.SendEventAsync(message);
                 Console.WriteLine($"{DateTime.Now} > Sending message: {messageString}");
                 

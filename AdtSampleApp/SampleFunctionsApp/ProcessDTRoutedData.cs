@@ -3,7 +3,6 @@
 using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
 using Azure.Identity;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
@@ -22,9 +21,8 @@ namespace SampleFunctionsApp
     // to the value from the notification.
     public static class ProcessDTRoutedData
     {
-        const string adtAppId = "https://digitaltwins.azure.net";
-        private static readonly string adtInstanceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
         private static readonly HttpClient httpClient = new HttpClient();
+        private static string adtServiceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
 
         [FunctionName("ProcessDTRoutedData")]
         public static async Task Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
@@ -41,8 +39,8 @@ namespace SampleFunctionsApp
             // Authenticate on ADT APIs
             try
             {
-                ManagedIdentityCredential cred = new ManagedIdentityCredential(adtAppId);
-                client = new DigitalTwinsClient(new Uri(adtInstanceUrl), cred, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
+                var credentials = new DefaultAzureCredential();
+                client = new DigitalTwinsClient(new Uri(adtServiceUrl), credentials, new DigitalTwinsClientOptions { Transport = new HttpClientTransport(httpClient) });
                 log.LogInformation("ADT service client connection created.");
             }
             catch (Exception e)
@@ -53,40 +51,32 @@ namespace SampleFunctionsApp
 
             if (client != null)
             {
-                try
+                if (eventGridEvent != null && eventGridEvent.Data != null)
                 {
-                    if (eventGridEvent != null && eventGridEvent.Data != null)
+                    string twinId = eventGridEvent.Subject.ToString();
+                    JObject message = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
+
+                    log.LogInformation($"Reading event from {twinId}: {eventGridEvent.EventType}: {message["data"]}");
+
+                    //Find and update parent Twin
+                    string parentId = await AdtUtilities.FindParentAsync(client, twinId, "contains", log);
+                    if (parentId != null)
                     {
-                        string twinId = eventGridEvent.Subject.ToString();
-                        JObject message = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
-
-                        log.LogInformation($"Reading event from {twinId}: {eventGridEvent.EventType}: {message["data"]}");
-
-                        //Find and update parent Twin
-                        string parentId = await AdtUtilities.FindParentAsync(client, twinId, "contains", log);
-                        if (parentId != null)
+                        // Read properties which values have been changed in each operation
+                        foreach (var operation in message["data"]["patch"])
                         {
-                            // Read properties which values have been changed in each operation
-                            foreach (var operation in message["data"]["patch"])
+                            string opValue = (string)operation["op"];
+                            if (opValue.Equals("replace"))
                             {
-                                string opValue = (string)operation["op"];
-                                if (opValue.Equals("replace"))
-                                {
-                                    string propertyPath = ((string)operation["path"]);
+                                string propertyPath = ((string)operation["path"]);
 
-                                    if (propertyPath.Equals("/Temperature"))
-                                    {
-                                        await AdtUtilities.UpdateTwinPropertyAsync(client, parentId, propertyPath, operation["value"].Value<float>(), log);
-                                    }
+                                if (propertyPath.Equals("/Temperature"))
+                                {
+                                    await AdtUtilities.UpdateTwinPropertyAsync(client, parentId, propertyPath, operation["value"].Value<float>(), log);
                                 }
                             }
                         }
-
                     }
-                }
-                catch (Exception e)
-                {
-                    log.LogError(e.ToString());
                 }
             }
         }

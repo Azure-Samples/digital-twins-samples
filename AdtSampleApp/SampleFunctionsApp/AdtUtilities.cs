@@ -1,9 +1,6 @@
 ﻿using Azure;
 using Azure.DigitalTwins.Core;
-using Azure.DigitalTwins.Core.Serialization;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Threading.Tasks;
 
 namespace SampleFunctionsApp
@@ -40,12 +37,10 @@ namespace SampleFunctionsApp
 
             try
             {
-                AsyncPageable<string> res = client.QueryAsync(query);
-
-                await foreach (string s in res)
+                AsyncPageable<BasicDigitalTwin> twins = client.QueryAsync<BasicDigitalTwin>(query);
+                await foreach (BasicDigitalTwin twin in twins)
                 {
-                    JObject parentTwin = (JObject)JsonConvert.DeserializeObject(s);
-                    return (string)parentTwin["Parent"]["$dtId"];
+                    return twin.Id;
                 }
                 log.LogWarning($"*** No parent found");
             }
@@ -61,12 +56,11 @@ namespace SampleFunctionsApp
             // If the twin does not exist, this will log an error
             try
             {
-                var uou = new UpdateOperationsUtility();
-                uou.AppendReplaceOp(propertyPath, value);
-                string patchPayload = uou.Serialize();
-                log.LogInformation($"UpdateTwinPropertyAsync sending {patchPayload}");
+                var updateTwinData = new JsonPatchDocument();
+                updateTwinData.AppendReplace(propertyPath, value);
 
-                await client.UpdateDigitalTwinAsync(twinId, patchPayload);
+                log.LogInformation($"UpdateTwinPropertyAsync sending {updateTwinData}");
+                await client.UpdateDigitalTwinAsync(twinId, updateTwinData);
             }
             catch (RequestFailedException exc)
             {
