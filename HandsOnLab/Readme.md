@@ -22,6 +22,7 @@ In this HOL, you will be setting up the end-to-end-architecture below.
 - [Azure Command Line Interface (CLI)](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
     - Recommend installing AZ CLI locally
     - Do not recommend using the Azure Cloud Shell as it will timeout due to the length of the lab
+- [.NET Core 3.1](https://dotnet.microsoft.com/download)
 - [Visual Studio Code](https://code.visualstudio.com)
 - [C# VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
 - [Azure Function VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
@@ -400,11 +401,11 @@ The data our Digital Twin needs comes from IoT devices that send their data to I
 1. In Azure Cloud Shell, create a device in IoT Hub with the following command.
 
 > [!Note] The Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
-
-    ```azurecli
-    az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
-    az iot hub device-identity connection-string show -d GrindingStep --hub-name $dtname
-    ```
+    
+```azurecli
+az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
+az iot hub device-identity connection-string show -d GrindingStep --hub-name $dtname
+```
 
 The output is information about the device that was created. Copy the device connection string for use later.
 
@@ -620,7 +621,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
     ```azurecli
     $es_resource_id=$(az eventhubs eventhub show -n tsi-event-hub -g $rgname --namespace $ehnamespace --query id -o tsv)
     $shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $ehnamespace -n RootManageSharedAccessKey --query primaryKey --output tsv)
-    az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name '$Default'
+    az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name '$Default' -l $location
     ```
 
 1. Finally, configure permissions to access the data in the TSI environment.
