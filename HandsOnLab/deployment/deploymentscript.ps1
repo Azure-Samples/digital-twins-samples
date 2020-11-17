@@ -2,17 +2,17 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$True)]
-    [string]$subscriptionname,
+    [string]$subscriptionID,
 
     [Parameter(Mandatory=$True)]
     [string]$username
 )
 
-$azresult = (az account set -s $subscriptionname)
-$azresult = (az account show --query '[name]' -o tsv)
+$azresult = (az account set -s $subscriptionID)
+$azresult = (az account show --query '[id]' -o tsv)
 
-if($azresult -eq $subscriptionname) {
-    Write-Host "Subscription set to '$subscriptionname'" -ForegroundColor DarkGray
+if($azresult -eq $subscriptionID) {
+    Write-Host "Subscription set to '$subscriptionID'" -ForegroundColor DarkGray
 } else {
     throw "Unable to set subscription"
 
@@ -45,11 +45,11 @@ az dt role-assignment create -n $dtname -g $rgname --role "Azure Digital Twins D
 $adthostname = "https://" + $(az dt show -n $dtname --query 'hostName' -o tsv)
 
 #Add Modules to ADT
-$factorymodelid = $(az dt model create -n $dtname --models .\models\FactoryInterface.json --query [].id -o tsv)
-$floormodelid = $(az dt model create -n $dtname --models .\models\FactoryFloorInterface.json --query [].id -o tsv)
-$prodlinemodelid = $(az dt model create -n $dtname --models .\models\ProductionLineInterface.json --query [].id -o tsv)
-$prodstepmodelid = $(az dt model create -n $dtname --models .\models\ProductionStepInterface.json --query [].id -o tsv)
-$gridingstepmodelid = $(az dt model create -n $dtname --models .\models\ProductionStepGrinding.json --query [].id -o tsv)
+$factorymodelid = $(az dt model create -n $dtname --models ..\models\FactoryInterface.json --query [].id -o tsv)
+$floormodelid = $(az dt model create -n $dtname --models ..\models\FactoryFloorInterface.json --query [].id -o tsv)
+$prodlinemodelid = $(az dt model create -n $dtname --models ..\models\ProductionLineInterface.json --query [].id -o tsv)
+$prodstepmodelid = $(az dt model create -n $dtname --models ..\models\ProductionStepInterface.json --query [].id -o tsv)
+$gridingstepmodelid = $(az dt model create -n $dtname --models ..\models\ProductionStepGrinding.json --query [].id -o tsv)
 
 #Instantiate ADT Instances
 az dt twin create -n $dtname --dtmi $factorymodelid --twin-id "ChocolateFactory"
@@ -71,7 +71,7 @@ az functionapp create --resource-group $rgname --consumption-plan-location $loca
 $principalID = $(az functionapp identity assign -g $rgname -n $telemetryfunctionname  --query principalId)
 az dt role-assignment create --dt-name $dtname --assignee $principalID --role "Azure Digital Twins Data Owner"
 az functionapp config appsettings set -g $rgname -n $telemetryfunctionname --settings "ADT_SERVICE_URL=$adthostname "
-az functionapp deployment source config-zip -g $rgname -n $telemetryfunctionname --src .\TwinInputFunction\twinfunction.zip
+az functionapp deployment source config-zip -g $rgname -n $telemetryfunctionname --src ..\TwinInputFunction\twinfunction.zip
 
 #Setup IoT Hub
 az iot hub create --name $dtname --resource-group $rgname --sku S1 -l $location
