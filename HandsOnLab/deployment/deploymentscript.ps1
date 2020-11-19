@@ -42,12 +42,12 @@ $twinupdatefunctionname = $random + "-twinupdatefunction"
 
 az group create -n $rgname -l $location
 az dt create --dt-name $dtname -g $rgname -l $location
-Write-Host "Pausing for 60 seconds..."
+Write-Host "Pausing for 60 seconds..." -ForegroundColor DarkYellow
 Start-Sleep -Seconds 60
 az dt role-assignment create -n $dtname -g $rgname --role "Azure Digital Twins Data Owner" --assignee $username -o json
 $adthostname = "https://" + $(az dt show -n $dtname --query 'hostName' -o tsv)
 Write-Host "Pausing for 60 seconds..."
-Start-Sleep -Seconds 60
+Start-Sleep -Seconds 60 -ForegroundColor DarkYellow
 #Add Modules to ADT
 $factorymodelid = $(az dt model create -n $dtname --models ..\models\FactoryInterface.json --query [].id -o tsv)
 $floormodelid = $(az dt model create -n $dtname --models ..\models\FactoryFloorInterface.json --query [].id -o tsv)
@@ -71,7 +71,7 @@ az dt twin relationship create -n $dtname --relationship $relname --twin-id "Pro
 #Setup Azure Function
 az storage account create --name $functionstorage --location $location --resource-group $rgname --sku Standard_LRS
 az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $telemetryfunctionname --storage-account $functionstorage
-Write-Host "Pausing for 60 seconds..."
+Write-Host "Pausing for 60 seconds..." -ForegroundColor DarkYellow
 Start-Sleep -Seconds 60
 $principalID = $(az functionapp identity assign -g $rgname -n $telemetryfunctionname  --query principalId)
 az dt role-assignment create --dt-name $dtname --assignee $principalID --role "Azure Digital Twins Data Owner"
