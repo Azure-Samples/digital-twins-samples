@@ -51,7 +51,7 @@ az login
 1. Edit the below as needed then copy and paste the following into the Powershell window
 
 ```azurecli
-$rgname = "adtholrg"
+$rgname = "adtholrg"+ $(get-random -maximum 10000)
 $random = "adthol" + $(get-random -maximum 10000)
 $dtname = $random + "-digitaltwin"
 $location = "eastus"
@@ -214,7 +214,7 @@ We can ingest data into Azure Digital Twins through external compute resources, 
 1. Create an Azure Function
 
     ```azurecli
-    az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $telemetryfunctionname --storage-account $functionstorage
+    az functionapp create --resource-group $rgname --consumption-plan-location $location --name $telemetryfunctionname --storage-account $functionstorage --functions-version 3
     ```
 
 ### Configure security access for the Azure function app

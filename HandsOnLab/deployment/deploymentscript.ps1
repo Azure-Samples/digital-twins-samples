@@ -1,5 +1,4 @@
-﻿
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory=$True)]
     [string]$subscriptionID,
@@ -7,7 +6,9 @@ param(
     [Parameter(Mandatory=$True)]
     [string]$username
 )
-Write-Host "This script will deploy a new environment each time."
+Write-Host "This script will deploy a new environment each time." -ForegroundColor DarkYellow
+
+
 
 $azresult = (az account set -s $subscriptionID)
 $azresult = (az account show --query '[id]' -o tsv)
@@ -46,8 +47,8 @@ Write-Host "Pausing for 60 seconds..." -ForegroundColor DarkYellow
 Start-Sleep -Seconds 60
 az dt role-assignment create -n $dtname -g $rgname --role "Azure Digital Twins Data Owner" --assignee $username -o json
 $adthostname = "https://" + $(az dt show -n $dtname --query 'hostName' -o tsv)
-Write-Host "Pausing for 60 seconds..."
-Start-Sleep -Seconds 60 -ForegroundColor DarkYellow
+Write-Host "Pausing for 60 seconds..."  -ForegroundColor DarkYellow
+Start-Sleep -Seconds 60
 #Add Modules to ADT
 $factorymodelid = $(az dt model create -n $dtname --models ..\models\FactoryInterface.json --query [].id -o tsv)
 $floormodelid = $(az dt model create -n $dtname --models ..\models\FactoryFloorInterface.json --query [].id -o tsv)
@@ -70,10 +71,10 @@ $relname = "rel_runs_steps"
 az dt twin relationship create -n $dtname --relationship $relname --twin-id "ProductionLine" --target "GrindingStep" --relationship-id "Floor run production lines"
 #Setup Azure Function
 az storage account create --name $functionstorage --location $location --resource-group $rgname --sku Standard_LRS
-az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $telemetryfunctionname --storage-account $functionstorage
+az functionapp create --resource-group $rgname --consumption-plan-location $location --name $telemetryfunctionname --storage-account $functionstorage --functions-version 3
+$principalID = $(az functionapp identity assign -g $rgname -n $telemetryfunctionname  --query principalId)
 Write-Host "Pausing for 60 seconds..." -ForegroundColor DarkYellow
 Start-Sleep -Seconds 60
-$principalID = $(az functionapp identity assign -g $rgname -n $telemetryfunctionname  --query principalId)
 az dt role-assignment create --dt-name $dtname --assignee $principalID --role "Azure Digital Twins Data Owner"
 az functionapp config appsettings set -g $rgname -n $telemetryfunctionname --settings "ADT_SERVICE_URL=$adthostname "
 Write-Host "Deploying code to function...this will take some time. " -ForegroundColor DarkYellow
@@ -82,11 +83,16 @@ az functionapp deployment source config-zip -g $rgname -n $telemetryfunctionname
 
 #Setup IoT Hub
 az iot hub create --name $dtname --resource-group $rgname --sku S1 -l $location
-az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
+Write-Host "Pausing for 60 seconds..." -ForegroundColor DarkYellow
+Start-Sleep -Seconds 60
+
 $iothub=$(az iot hub list -g $rgname --query [].id -o tsv)
 $function=$(az functionapp function show -n $telemetryfunctionname -g $rgname --function-name twinsfunction --query id -o tsv)
 az eventgrid event-subscription create --name IoTHubEvents --source-resource-id $iothub --endpoint $function --endpoint-type azurefunction --included-event-types Microsoft.Devices.DeviceTelemetry
 
+#Setup IoT Device
+az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
+az iot hub device-identity connection-string show -d GrindingStep --hub-name $dtname
 }
    
 else {
