@@ -1080,8 +1080,9 @@ namespace SampleClientApp
             for (int i = 0; i < ts.Arguments.Length; i += 2)
             {
                 try
-                {
-                    Response<BasicDigitalTwin> res0 = client.GetDigitalTwin<BasicDigitalTwin>(ts.Arguments[i]);
+                {   //Temporary fix while time format is being updated on the backend.
+                    //Revert object back to BasicDigitalTwin after December 19th 2020
+                    Response<object> res0 = client.GetDigitalTwin<object>(ts.Arguments[i]);
                     if (res0 != null)
                         LogProperty(JsonSerializer.Serialize(res0.Value), ts.Arguments[i + 1]);
                 }
