@@ -19,9 +19,12 @@ In this HOL, you will be setting up the end-to-end-architecture below.
 
 - Azure Subcription
 - Admin Access to Azure AD Tenant & Azure Subscription
+- Mac OS: [PowerShell for Mac](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-macos?view=powershell-6 )
+- Windows OS: PowerShell is built-in
 - [Azure Command Line Interface (CLI)](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
     - Recommend installing AZ CLI locally
     - Do not recommend using the Azure Cloud Shell as it will timeout due to the length of the lab
+- [.NET Core 3.1](https://dotnet.microsoft.com/download)
 - [Visual Studio Code](https://code.visualstudio.com)
 - [C# VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
 - [Azure Function VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
@@ -42,19 +45,22 @@ First, we'll need to create and store some variables. This will make running the
 az login
 ```
 
-- Ensure you are logged into the right account by running the command below
+- Ensure you are logged into the right account and set to the correct default Azure subscription by running the command below
     ```azurecli
     az account show
     ```
-
+- You can change the subscription using the command below
+    ```azurecli
+    az account set -s <subscriptionId>
+    ```
 1. Edit the below as needed then copy and paste the following into the Powershell window
 
 ```azurecli
-$rgname = "adtholrg"
+$rgname = "adtholrg"+ $(get-random -maximum 10000)
 $random = "adthol" + $(get-random -maximum 10000)
 $dtname = $random + "-digitaltwin"
 $location = "eastus"
-$username = "<account used to log into azure>"
+$username = Read-Host "Enter username. ex: jdoe@contoso.com"
 $functionstorage = $random + "storage"
 $telemetryfunctionname = $random + "-telemetryfunction"
 $twinupdatefunctionname = $random + "-twinupdatefunction"
@@ -95,7 +101,7 @@ $functionstorage
 >If it's your first time running the az dt command, you'll be prompted to add the extension. Choose 'Y'
 >![az extension](./images/az-dt-extension.png)
 
-1. Assign permissions to Azure Digital Twins
+1. In order to modify the Azure Digital Twins service, you'll need to assign the *Azure Digital Twins Owner* permission
 
     ```azurecli
     az dt role-assignment create -n $dtname -g $rgname --role "Azure Digital Twins Data Owner" --assignee $username -o json
@@ -213,7 +219,7 @@ We can ingest data into Azure Digital Twins through external compute resources, 
 1. Create an Azure Function
 
     ```azurecli
-    az functionapp create --resource-group $rgname --consumption-plan-location $location --runtime dotnet --functions-version 3 --name $telemetryfunctionname --storage-account $functionstorage
+    az functionapp create --resource-group $rgname --consumption-plan-location $location --name $telemetryfunctionname --storage-account $functionstorage --functions-version 3
     ```
 
 ### Configure security access for the Azure function app
@@ -260,6 +266,10 @@ In this section, you use Visual Studio Code to create a local Azure Functions pr
     ![Choose Create a new project](./images/create-new-project.png)
 
 1. Choose a directory location for your project workspace and choose **Select**.
+
+>[!NOTE]
+>This directoy should be new, empty, and unique for this Azure Function
+>
 
 1. Provide the following information at the prompts:
     - **Select a language for your function project**: Choose `C#`.
@@ -397,14 +407,14 @@ The data our Digital Twin needs comes from IoT devices that send their data to I
    az iot hub create --name $dtname --resource-group $rgname --sku S1 -l $location
    ```
 
-1. In Azure Cloud Shell, create a device in IoT Hub with the following command.
+1. Create a device identity in IoT Hub with the following command.
 
 > [!Note] The Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
-
-    ```azurecli
-    az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
-    az iot hub device-identity connection-string show -d GrindingStep --hub-name $dtname
-    ```
+    
+```azurecli
+az iot hub device-identity create --device-id GrindingStep --hub-name $dtname -g $rgname
+az iot hub device-identity connection-string show -d GrindingStep --hub-name $dtname
+```
 
 The output is information about the device that was created. Copy the device connection string for use later.
 
@@ -520,6 +530,10 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
 
 1. Choose a directory location for your project workspace and choose **Select**.
 
+>[!NOTE]
+>This directoy should be new, empty, and unique for this Azure Function
+>
+
 1. Provide the following information at the prompts:
     - **Select a language for your function project**: Choose `C#`.
     - **Select a template for your project's first function**: Choose `EventHubTrigger`.
@@ -620,7 +634,7 @@ At this point, Azure Digital Twins should be sending the Twin Updates it receive
     ```azurecli
     $es_resource_id=$(az eventhubs eventhub show -n tsi-event-hub -g $rgname --namespace $ehnamespace --query id -o tsv)
     $shared_access_key=$(az eventhubs namespace authorization-rule keys list -g $rgname --namespace-name $ehnamespace -n RootManageSharedAccessKey --query primaryKey --output tsv)
-    az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name '$Default'
+    az timeseriesinsights event-source eventhub create -g $rgname --environment-name $tsiname -n tsieh --key-name RootManageSharedAccessKey --shared-access-key $shared_access_key --event-source-resource-id $es_resource_id --consumer-group-name '$Default' -l $location
     ```
 
 1. Finally, configure permissions to access the data in the TSI environment.
