@@ -1,0 +1,211 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    }
+  },
+  "variables": {
+    "prefix": "[concat('a', substring(uniqueString(resourceGroup().id), 0, 6))]",
+    
+    "iotHub": {
+      "name": "[concat(variables('prefix'), 'iothub')]",
+      "id": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Devices/IotHubs/', variables('prefix'), 'iothub')]"
+    },
+    "eventHub": {
+      "name": "[concat(variables('prefix'), 'eventhub')]",
+      "namespaces": "[concat(variables('prefix'), 'eventhubnamespaces')]",
+      "namespacesExternalId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.EventHub/namespaces/', variables('prefix'), 'eventhubnamespaces')]"
+    },
+    "digitaltwins": {
+      "name": "[concat(variables('prefix'), 'digtwins')]"
+    },
+    "storage": {
+      "name": "[concat(variables('prefix'), 'storage')]"
+    },
+    "tsi": {
+      "name": "[concat(variables('prefix'), 'tsi')]",
+      "sourceName": "[concat(variables('prefix'), 'tsies')]"
+    },
+    "eventGrid": {
+      "name": "[concat(variables('prefix'), 'EventGrid')]"
+    },
+    "serverfarm": {
+      "name": "[concat(variables('prefix'), 'sf')]"
+    },
+    "functionapp": {
+      "name": "[concat(variables('prefix'), 'DTFunctions')]",
+      "zipurl": "https://github.com/Teodelas/digital-twins-samples/blob/master/HandsOnLab/TwinInputFunction/twinfunction.zip?raw=true"
+    }
+
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Devices/IotHubs",
+      "apiVersion": "2020-03-01",
+      "name": "[variables('iotHub').name]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "eventHubEndpoints": {
+          "events": {
+            "retentionTimeInDays": 1,
+            "partitionCount": 2
+          }
+        },
+        "cloudToDevice": {
+          "defaultTtlAsIso8601": "PT1H",
+          "maxDeliveryCount": 10,
+          "feedback": {
+            "ttlAsIso8601": "PT1H",
+            "lockDurationAsIso8601": "PT60S",
+            "maxDeliveryCount": 10
+          }
+        },
+        "messagingEndpoints": {
+          "fileNotifications": {
+            "ttlAsIso8601": "PT1H",
+            "lockDurationAsIso8601": "PT1M",
+            "maxDeliveryCount": 10
+          }
+        }
+      },
+      "sku": {
+        "name": "S1",
+        "capacity": 1
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2018-02-01",
+      "name": "[variables('storage').name]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "isHnsEnabled": false
+      }
+    },
+    {
+      "type": "Microsoft.DigitalTwins/digitalTwinsInstances",
+      "apiVersion": "2020-03-01-preview",
+      "name": "[variables('digitaltwins').name]",
+      "location": "[resourceGroup().location]",
+      "tags": {},
+      "sku": {
+        "name": "S1"
+      },
+      "properties": {}
+    },
+    {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2019-08-01",
+            "name": "[variables('functionapp').name]",
+            "kind": "functionapp",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', variables('serverfarm').name)]",
+                "[concat('Microsoft.Storage/storageAccounts/', variables('storage').name)]"
+            ],
+            "properties": {
+                "name": "[variables('functionapp').name]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "dotnet"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~3"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storage').name, ';AccountKey=', listKeys(variables('storage').name,'2019-06-01').keys[0].value)]"
+                        },
+                        {
+                        "name": "ADT_SERVICE_URL",
+                        "value": "[concat('https://', variables('digitaltwins').name, '.api.wus2.digitaltwins.azure.net')]"
+                        },
+                        {
+                        "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                        "value": true
+                        }
+                    ]
+                },
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('serverfarm').name)]",
+                "clientAffinityEnabled": false
+            },
+        "resources": [{
+        "name": "MSDeploy",
+        "type": "extensions",
+        "location": "[resourceGroup().location]",
+        "apiVersion": "2015-08-01",
+        "dependsOn": [
+          "[concat('Microsoft.Web/sites/', variables('functionapp').name)]"
+        ],
+        "tags": {
+          "displayName": "webDeploy"
+        },
+        "properties": {
+          "packageUri": "[variables('functionapp').zipurl]",
+            "dbType": "None",
+            "connectionString": ""
+        }
+      }]    
+        },
+    {
+        "type": "Microsoft.Web/serverfarms",
+        "apiVersion": "2019-08-01",
+        "name": "[variables('serverfarm').name]",
+        "location": "[parameters('location')]",
+        "kind": "functionapp",
+        "sku": {
+            "Tier": "Dynamic",
+            "Name": "B1"
+        }
+    },
+    {
+      "type": "Microsoft.EventGrid/systemTopics",
+      "apiVersion": "2020-04-01-preview",
+      "name": "[variables('eventGrid').name]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [ "[variables('iotHub').name]"],
+      "properties": {
+        "source": "[resourceId('Microsoft.Devices/IotHubs', variables('iotHub').name)]",
+        "topicType": "microsoft.devices.iothubs"
+      }
+    },
+    {
+    "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
+    "name": "[concat(variables('eventGrid').name, '/sendtoFunction')]",
+    "apiVersion": "2020-04-01-preview",
+    "dependsOn": [
+        "[variables('eventGrid').name]",
+        "[variables('functionapp').name]",
+        "[variables('iotHub').name]"
+    ],
+    "properties": {
+        "destination": {
+            "endpointType": "AzureFunction",
+            "properties": {
+                "resourceId": "[concat(resourceId('Microsoft.Web/sites', variables('functionapp').name), '/functions/', variables('functionapp').name)]",
+                "maxEventsPerBatch": 1,
+                "preferredBatchSizeInKilobytes": 64
+            }
+        },
+        "filter": {
+            "includedEventTypes": [
+                "Microsoft.Devices.DeviceTelemetry"
+            ]
+        }
+    }
+    }
+  ]
+}
