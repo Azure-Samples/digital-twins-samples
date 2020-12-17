@@ -19,6 +19,8 @@ In this HOL, you will be setting up the end-to-end-architecture below.
 
 - Azure Subcription
 - Admin Access to Azure AD Tenant & Azure Subscription
+- Mac OS: [PowerShell for Mac](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-macos?view=powershell-6 )
+- Windows OS: PowerShell is built-in
 - [Azure Command Line Interface (CLI)](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
     - Recommend installing AZ CLI locally
     - Do not recommend using the Azure Cloud Shell as it will timeout due to the length of the lab
@@ -43,11 +45,14 @@ First, we'll need to create and store some variables. This will make running the
 az login
 ```
 
-- Ensure you are logged into the right account by running the command below
+- Ensure you are logged into the right account and set to the correct default Azure subscription by running the command below
     ```azurecli
     az account show
     ```
-
+- You can change the subscription using the command below
+    ```azurecli
+    az account set -s <subscriptionId>
+    ```
 1. Edit the below as needed then copy and paste the following into the Powershell window
 
 ```azurecli
@@ -55,7 +60,7 @@ $rgname = "adtholrg"+ $(get-random -maximum 10000)
 $random = "adthol" + $(get-random -maximum 10000)
 $dtname = $random + "-digitaltwin"
 $location = "eastus"
-$username = "<account used to log into azure>"
+$username = Read-Host "Enter username. ex: jdoe@contoso.com"
 $functionstorage = $random + "storage"
 $telemetryfunctionname = $random + "-telemetryfunction"
 $twinupdatefunctionname = $random + "-twinupdatefunction"
@@ -96,7 +101,7 @@ $functionstorage
 >If it's your first time running the az dt command, you'll be prompted to add the extension. Choose 'Y'
 >![az extension](./images/az-dt-extension.png)
 
-1. Assign permissions to Azure Digital Twins
+1. In order to modify the Azure Digital Twins service, you'll need to assign the *Azure Digital Twins Owner* permission
 
     ```azurecli
     az dt role-assignment create -n $dtname -g $rgname --role "Azure Digital Twins Data Owner" --assignee $username -o json
@@ -262,6 +267,10 @@ In this section, you use Visual Studio Code to create a local Azure Functions pr
 
 1. Choose a directory location for your project workspace and choose **Select**.
 
+>[!NOTE]
+>This directoy should be new, empty, and unique for this Azure Function
+>
+
 1. Provide the following information at the prompts:
     - **Select a language for your function project**: Choose `C#`.
     - **Select a template for your project's first function**: Choose `Change template filter`.
@@ -398,7 +407,7 @@ The data our Digital Twin needs comes from IoT devices that send their data to I
    az iot hub create --name $dtname --resource-group $rgname --sku S1 -l $location
    ```
 
-1. In Azure Cloud Shell, create a device in IoT Hub with the following command.
+1. Create a device identity in IoT Hub with the following command.
 
 > [!Note] The Azure Function assumes the --device-id matches the --twin-id created when a Twin is initialized.
     
@@ -520,6 +529,10 @@ Use Visual Studio Code to create a local Azure Functions project. Later in this 
     ![Choose Create a new project](./images/create-new-project.png)
 
 1. Choose a directory location for your project workspace and choose **Select**.
+
+>[!NOTE]
+>This directoy should be new, empty, and unique for this Azure Function
+>
 
 1. Provide the following information at the prompts:
     - **Select a language for your function project**: Choose `C#`.
