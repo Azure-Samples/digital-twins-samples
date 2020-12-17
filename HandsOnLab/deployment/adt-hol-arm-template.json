@@ -189,13 +189,14 @@
     "dependsOn": [
         "[variables('eventGrid').name]",
         "[variables('functionapp').name]",
-        "[variables('iotHub').name]"
+        "[variables('iotHub').name]",
+        "MSDeploy"
     ],
     "properties": {
         "destination": {
             "endpointType": "AzureFunction",
             "properties": {
-                "resourceId": "[concat(resourceId('Microsoft.Web/sites', variables('functionapp').name), '/functions/', variables('functionapp').name)]",
+                "resourceId": "[concat(resourceId('Microsoft.Web/sites', variables('functionapp').name), '/functions/TwinsFunction')]",
                 "maxEventsPerBatch": 1,
                 "preferredBatchSizeInKilobytes": 64
             }
