@@ -167,7 +167,7 @@
                 "clientAffinityEnabled": false
             },
         "resources": [{
-        "name": "[variables('DTFunctionWebDeploy')]",
+        "name": "MSDeploy",
         "type": "extensions",
         "location": "[resourceGroup().location]",
         "dependsOn": [
@@ -175,7 +175,7 @@
         ],
         "apiVersion": "2015-08-01",
         "tags": {
-          "displayName": "webDeploy"
+          "displayName": "[variables('DTFunctionWebDeploy')]"
         },
         "properties": {
           "packageUri": "[variables('functionapp').zipurl]",
@@ -214,7 +214,7 @@
         "[variables('eventGrid').name]",
         "[variables('functionapp').name]",
         "[variables('iotHub').name]",
-        "[variables('DTFunctionWebDeploy')]"
+        "[resourceId('Microsoft.Web/sites/extensions',variables('functionapp').name,'MSDeploy')]"
     ],
     "properties": {
         "destination": {
