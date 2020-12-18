@@ -214,7 +214,7 @@
         "[variables('eventGrid').name]",
         "[variables('functionapp').name]",
         "[variables('iotHub').name]",
-        "[resourceId('Microsoft.Web/sites/extensions/', variables('DTFunctionWebDeploy'))]"
+        "[variables('DTFunctionWebDeploy')]"
     ],
     "properties": {
         "destination": {
