@@ -83,8 +83,8 @@ az functionapp deployment source config-zip -g $rgname -n $telemetryfunctionname
 
 #Setup IoT Hub
 az iot hub create --name $dtname --resource-group $rgname --sku S1 -l $location
-Write-Host "Pausing for 5 minutes for IoT Hub to move to active state..." -ForegroundColor DarkYellow
-Start-Sleep -Seconds 300
+Write-Host "Pausing for 2 minutes for IoT Hub to move to active state..." -ForegroundColor DarkYellow
+Start-Sleep -Seconds 120
 
 $iothub=$(az iot hub list -g $rgname --query [].id -o tsv)
 $function=$(az functionapp function show -n $telemetryfunctionname -g $rgname --function-name twinsfunction --query id -o tsv)

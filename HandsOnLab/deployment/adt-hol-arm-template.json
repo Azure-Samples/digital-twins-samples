@@ -12,6 +12,12 @@
     "utcValue": {
       "type": "string",
       "defaultValue": "[utcNow()]"
+    },
+    "userid": {
+        "type": "string",
+        "metadata": {
+            "description:": "User ID deploying the environment: az ad user show --id jdoe@contoso.com --query objectId -o tsv "
+        }
     }
   },
   "variables": {
@@ -51,6 +57,7 @@
     "ADTroleDefinitionName": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), variables('ADTroleDefinitionId'), resourceGroup().id)]",
     "ADTroleDefinitionWeb": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('functionapp').name), variables('ADTroleDefinitionId'), resourceGroup().id)]",
     "roleDefinitionName": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), variables('roleDefinitionId'), resourceGroup().id)]",
+    "ADTRoleDefinitionUser": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('userid')), variables('roleDefinitionId'), resourceGroup().id)]",
     "identityName" : "[concat(variables('prefix'), 'scriptidentity')]"
   },
   "resources": [
@@ -271,6 +278,17 @@
         "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionapp').name), '2019-08-01', 'Full').identity.principalId]",
         "scope": "[resourceGroup().id]",
         "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2018-09-01-preview",
+      "name": "[variables('ADTRoleDefinitionUser')]",
+      "properties": {
+        "roleDefinitionId": "[variables('ADTroleDefinitionId')]",
+        "principalId": "[parameters('userid')]",
+        "scope": "[resourceGroup().id]",
+        "principalType": "User"
       }
     },
 {
