@@ -58,7 +58,8 @@
     "ADTroleDefinitionWeb": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('functionapp').name), variables('ADTroleDefinitionId'), resourceGroup().id)]",
     "roleDefinitionName": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), variables('roleDefinitionId'), resourceGroup().id)]",
     "ADTRoleDefinitionUser": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('userid')), variables('roleDefinitionId'), resourceGroup().id)]",
-    "identityName" : "[concat(variables('prefix'), 'scriptidentity')]"
+    "identityName" : "[concat(variables('prefix'), 'scriptidentity')]",
+    "DTFunctionWebDeploy": "[concat(variables('prefix'), 'DTFunctionsWebDeploy')]"
   },
   "resources": [
     {
@@ -166,9 +167,12 @@
                 "clientAffinityEnabled": false
             },
         "resources": [{
-        "name": "MSDeploy",
+        "name": "[variables('DTFunctionWebDeploy')]",
         "type": "extensions",
         "location": "[resourceGroup().location]",
+        "dependsOn": [
+          "[variables('functionapp').name]"
+        ],
         "apiVersion": "2015-08-01",
         "tags": {
           "displayName": "webDeploy"
@@ -210,7 +214,7 @@
         "[variables('eventGrid').name]",
         "[variables('functionapp').name]",
         "[variables('iotHub').name]",
-        "MSDeploy2"
+        "[concat('Microsoft.Web/sites/extensions/', variables('DTFunctionWebDeploy'))]"
     ],
     "properties": {
         "destination": {
