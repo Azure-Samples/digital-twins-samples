@@ -8,6 +8,10 @@
       "metadata": {
         "description": "Location for all resources."
       }
+    },
+    "utcValue": {
+      "type": "string",
+      "defaultValue": "[utcNow()]"
     }
   },
   "variables": {
@@ -41,8 +45,13 @@
     "functionapp": {
       "name": "[concat(variables('prefix'), 'DTFunctions')]",
       "zipurl": "https://github.com/Teodelas/digital-twins-samples/blob/master/HandsOnLab/TwinInputFunction/twinfunction.zip?raw=true"
-    }
-
+    },
+    "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
+    "ADTroleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', 'bcd981a7-7f74-457b-83e1-cceb9e632ffe')]",
+    "ADTroleDefinitionName": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), variables('ADTroleDefinitionId'), resourceGroup().id)]",
+    "ADTroleDefinitionWeb": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('functionapp').name), variables('ADTroleDefinitionId'), resourceGroup().id)]",
+    "roleDefinitionName": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), variables('roleDefinitionId'), resourceGroup().id)]",
+    "identityName" : "[concat(variables('prefix'), 'scriptidentity')]"
   },
   "resources": [
     {
@@ -98,6 +107,9 @@
       "name": "[variables('digitaltwins').name]",
       "location": "[resourceGroup().location]",
       "tags": {},
+      "dependsOn": [
+                  "[variables('identityName')]"
+      ],
       "sku": {
         "name": "S1"
       },
@@ -111,8 +123,12 @@
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[concat('Microsoft.Web/serverfarms/', variables('serverfarm').name)]",
-                "[concat('Microsoft.Storage/storageAccounts/', variables('storage').name)]"
-            ],
+                "[concat('Microsoft.Storage/storageAccounts/', variables('storage').name)]",
+                "[variables('identityName')]"
+                        ],
+        "identity": {
+            "type": "SystemAssigned"
+    },
             "properties": {
                 "name": "[variables('functionapp').name]",
                 "siteConfig": {
@@ -207,6 +223,117 @@
             ]
         }
     }
-    }
+    },
+     {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "[variables('identityName')]",
+      "location": "[resourceGroup().location]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2018-09-01-preview",
+      "name": "[variables('roleDefinitionName')]",
+      "dependsOn": [
+        "[variables('identityName')]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('roleDefinitionId')]",
+        "principalId": "[reference(variables('identityName')).principalId]",
+        "scope": "[resourceGroup().id]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+        {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2018-09-01-preview",
+      "name": "[variables('ADTroleDefinitionName')]",
+      "dependsOn": [
+        "[variables('identityName')]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('ADTroleDefinitionId')]",
+        "principalId": "[reference(variables('identityName')).principalId]",
+        "scope": "[resourceGroup().id]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2018-09-01-preview",
+      "name": "[variables('ADTroleDefinitionWeb')]",
+      "dependsOn": [
+        "[variables('identityName')]",
+        "[variables('functionapp').name]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[variables('ADTroleDefinitionId')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('functionapp').name), '2019-08-01', 'Full').identity.principalId]",
+        "scope": "[resourceGroup().id]",
+        "principalType": "ServicePrincipal"
+      }
+    },
+{
+  "type": "Microsoft.Resources/deploymentScripts",
+  "apiVersion": "2020-10-01",
+  "name": "PostDeploymentscript",
+  "location": "[resourceGroup().location]",
+  "kind": "AzureCLI", //AzurePowerShell", // or "AzureCLI"
+  "dependsOn": [
+    "[variables('roleDefinitionName')]"
+    ],
+  "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]": {
+          }
+        }
+    },
+  "properties": {
+    "forceUpdateTag": "[parameters('utcValue')]",
+    //"azPowerShellVersion": "3.0",  // or "azCliVersion": "2.15.0",
+    "azCliVersion": "2.15.0",
+    //PS Version"arguments": "[format(' -dtname {0}, -rgname {1} -username {2} -identity {3}', variables('digitaltwins').name, resourceGroup().name, 'admin@teoinventrix.onmicrosoft.com', reference(variables('identityName')).principalId) ]",
+    "arguments": "[format('{0} {1}', variables('digitaltwins').name, resourceGroup().name)]",
+    //"arguments": "[concat(variables('apostrophe'), variables('digitaltwins').name,variables('apostrophe'), ',', variables('apostrophe'), resourceGroup().name,variables('apostrophe'), ',', variables('apostrophe'),'admin@teoinventrix.onmicrosoft.com',variables('apostrophe'), ',', variables('apostrophe'), reference(variables('identityName')).principalId, variables('apostrophe')) ]",
+    //"arguments": "foo,bar",
+    "environmentVariables": [
+      {
+        "name": "someSecret",
+        "secureValue": "if this is really a secret, don't put it here... in plain text..."
+      }
+    ],
+    "scriptContent": "
+      dtname=$1
+      rgname=$2
+      git clone https://github.com/Teodelas/digital-twins-samples.git -q
+      az extension add --name azure-iot --upgrade
+      factorymodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryInterface.json --query [].id -o tsv)
+      floormodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryFloorInterface.json --query [].id -o tsv)
+      prodlinemodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/ProductionLineInterface.json --query [].id -o tsv)
+      prodstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/ProductionStepInterface.json --query [].id -o tsv)
+      gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/ProductionStepGrinding.json --query [].id -o tsv)
+
+            #Instantiate ADT Instances
+        az dt twin create -n $dtname --dtmi $factorymodelid --twin-id 'ChocolateFactory'
+        az dt twin create -n $dtname --dtmi $floormodelid --twin-id 'FactoryFloor'
+        az dt twin create -n $dtname --dtmi $prodlinemodelid --twin-id 'ProductionLine'
+        az dt twin create -n $dtname --dtmi $gridingstepmodelid --twin-id 'GrindingStep'
+
+        #Create relationship
+        relname='rel_has_floors'
+        az dt twin relationship create -n $dtname --relationship $relname --twin-id 'ChocolateFactory' --target 'FactoryFloor' --relationship-id 'Factory has floors'
+        relname='rel_runs_lines'
+        az dt twin relationship create -n $dtname --relationship $relname --twin-id 'FactoryFloor' --target 'ProductionLine' --relationship-id 'Floor run production lines'
+        relname='rel_runs_steps'
+        az dt twin relationship create -n $dtname --relationship $relname --twin-id 'ProductionLine' --target 'GrindingStep' --relationship-id 'Floor run production lines'
+
+    ", // or "primaryScriptUri": "https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/deployment-script/deploymentscript-helloworld.ps1",
+    "supportingScriptUris":[],
+    "timeout": "PT30M",
+    "cleanupPreference": "OnSuccess",
+    "retentionInterval": "P1D"
+  }
+}
   ]
 }

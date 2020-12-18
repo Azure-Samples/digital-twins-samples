@@ -39,6 +39,7 @@ $telemetryfunctionname = $random + "-telemetryfunction"
 $twinupdatefunctionname = $random + "-twinupdatefunction"
 
 Write-Host "Deploying environment into Resource Group: $rgname" -ForegroundColor DarkGray
+az extension add --name azure-iot --upgrade
 
 az group create -n $rgname -l $location
 az dt create --dt-name $dtname -g $rgname -l $location
