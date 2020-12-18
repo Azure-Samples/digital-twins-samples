@@ -170,9 +170,6 @@
         "type": "extensions",
         "location": "[resourceGroup().location]",
         "apiVersion": "2015-08-01",
-        "dependsOn": [
-          "[concat('Microsoft.Web/sites/', variables('functionapp').name)]"
-        ],
         "tags": {
           "displayName": "webDeploy"
         },
@@ -213,7 +210,7 @@
         "[variables('eventGrid').name]",
         "[variables('functionapp').name]",
         "[variables('iotHub').name]",
-        "MSDeploy"
+        "MSDeploy2"
     ],
     "properties": {
         "destination": {
