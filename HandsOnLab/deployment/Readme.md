@@ -1,0 +1,1 @@
+[![homepage](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https://raw.githubusercontent.com/Teodelas/digital-twins-samples/master/HandsOnLab/deployment/MSLearnModule3/adt-hol-pt1-arm-template.json "Deploy template")
