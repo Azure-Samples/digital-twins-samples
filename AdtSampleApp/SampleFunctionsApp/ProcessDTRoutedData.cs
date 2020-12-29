@@ -1,10 +1,9 @@
 // Default URL for triggering event grid function in the local environment.
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
-using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
 using Azure.Identity;
-using Microsoft.Azure.EventGrid.Models;
+using Azure.Messaging.EventGrid;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
@@ -51,10 +50,10 @@ namespace SampleFunctionsApp
 
             if (client != null)
             {
-                if (eventGridEvent != null && eventGridEvent.Data != null)
+                if (eventGridEvent != null && eventGridEvent.GetData()!= null)
                 {
                     string twinId = eventGridEvent.Subject.ToString();
-                    JObject message = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
+                    JObject message = (JObject)JsonConvert.DeserializeObject(eventGridEvent.GetData().ToString());
 
                     log.LogInformation($"Reading event from {twinId}: {eventGridEvent.EventType}: {message["data"]}");
 

@@ -2,7 +2,7 @@ using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
 using Azure.Identity;
-using Microsoft.Azure.EventGrid.Models;
+using Azure.Messaging.EventGrid;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
@@ -34,12 +34,12 @@ namespace SampleFunctionsApp
                 { Transport = new HttpClientTransport(httpClient) });
             log.LogInformation($"ADT service client connection created.");
 
-            if (eventGridEvent != null && eventGridEvent.Data != null)
+            if (eventGridEvent != null && eventGridEvent.GetData() != null)
             {
-                log.LogInformation(eventGridEvent.Data.ToString());
+                log.LogInformation(eventGridEvent.GetData().ToString());
 
                 // Reading deviceId and temperature for IoT Hub JSON
-                JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.Data.ToString());
+                JObject deviceMessage = (JObject)JsonConvert.DeserializeObject(eventGridEvent.GetData().ToString());
                 string deviceId = (string)deviceMessage["systemProperties"]["iothub-connection-device-id"];
                 var temperature = deviceMessage["body"]["Temperature"];
 
