@@ -11,13 +11,17 @@
     },
     "utcValue": {
       "type": "string",
-      "defaultValue": "[utcNow()]"
+      "defaultValue": "[utcNow()]",
+      "metadata": {
+            "description" : "Leave this field as is."
+        }
     },
     "userid": {
         "type": "string",
         "metadata": {
-            "description:": "User ID deploying the environment: az ad user show --id jdoe@contoso.com --query objectId -o tsv "
-        }
+            "description" : "User ID deploying the environment: az ad user show --id jdoe@contoso.com --query objectId -o tsv "
+        },
+        "defaultValue": "paste the output of: az ad user show --id jdoe@contoso.com --query objectId -o tsv"
     }
   },
   "variables": {
@@ -322,7 +326,7 @@
         "secureValue": "if this is really a secret, don't put it here... in plain text..."
       }
     ],
-    "primaryScriptUri": "https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/deployment-script/deploymentscript-helloworld.ps1",
+    "primaryScriptUri": "https://raw.githubusercontent.com/Teodelas/digital-twins-samples/master/HandsOnLab/deployment/MSLearnModule3/arm-template-deployment-script.ps1",
     "supportingScriptUris":[],
     "timeout": "PT30M",
     "cleanupPreference": "OnSuccess",
