@@ -23,5 +23,5 @@ gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscr
   az dt twin relationship create -n $dtname --relationship $relname --twin-id 'FactoryFloor' --target 'ProductionLine' --relationship-id 'Floor run production lines'
   relname='rel_runs_steps'
   az dt twin relationship create -n $dtname --relationship $relname --twin-id 'ProductionLine' --target 'GrindingStep' --relationship-id 'Floor run production lines'
-  result="{\"myResult\" : "\$rgname = \"$rgname\";\$location = \"$location\";\$dtname = \"$dtname\";\$functionstorage = \"${prefix}storage\";\$telemetryfunctionname = \"${prefix}-telemetryfunction\";\$twinupdatefunctionname = \"${prefix}-twinupdatefunction\"; \$username = \"replaceme@contoso.com\""}"
+  result="{\"myResult\":"\"" \$rgname = '$rgname';\$location = '$location';\$dtname = '$dtname';\$functionstorage = '${prefix}storage';\$telemetryfunctionname = '${prefix}-telemetryfunction';\$twinupdatefunctionname = '${prefix}-twinupdatefunction'; \$username = 'replaceme@contoso.com' "\""}"
   echo $result | jq -c > $AZ_SCRIPTS_OUTPUT_PATH
