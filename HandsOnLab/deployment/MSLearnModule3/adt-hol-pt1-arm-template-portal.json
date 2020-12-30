@@ -333,5 +333,11 @@
     "retentionInterval": "P1D"
   }
 }
-  ]
+  ],
+  "outputs": {
+    "result": {
+      "value": "[reference('PostDeploymentscript').outputs]",
+      "type": "object"
+    }
+  }
 }
