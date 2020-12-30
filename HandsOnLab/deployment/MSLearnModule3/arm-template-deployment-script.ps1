@@ -22,4 +22,4 @@ gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscr
   relname='rel_runs_steps'
   az dt twin relationship create -n $dtname --relationship $relname --twin-id 'ProductionLine' --target 'GrindingStep' --relationship-id 'Floor run production lines'
   result="[{\"id\": 1, \"name\": \"Arthur\", \"age\": \"21\"},{\"id\": 2, \"name\": \"Richard\", \"age\": \"32\"}]"
-  echo $result | jq -c > $AZ_SCRIPTS_OUTPUT_PATH"
+  echo $result | jq -c > $AZ_SCRIPTS_OUTPUT_PATH
