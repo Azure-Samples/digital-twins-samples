@@ -1,5 +1,7 @@
 dtname=$1
 rgname=$2
+prefix=$3
+location=$4
 git clone https://github.com/Teodelas/digital-twins-samples.git -q
 az extension add --name azure-iot --upgrade
 factorymodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryInterface.json --query [].id -o tsv)
@@ -21,6 +23,5 @@ gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscr
   az dt twin relationship create -n $dtname --relationship $relname --twin-id 'FactoryFloor' --target 'ProductionLine' --relationship-id 'Floor run production lines'
   relname='rel_runs_steps'
   az dt twin relationship create -n $dtname --relationship $relname --twin-id 'ProductionLine' --target 'GrindingStep' --relationship-id 'Floor run production lines'
-  result="{\"myResult\" : [{\"id\": 1, \"name\": \"Arthur\", \"age\": \"21\"},{\"id\": 2, \"name\": \"Richard\",
- \"age\": \"32\"}] }"
+  result="{\"myResult\" : "\$rgname = \"$rgname\";\$location = \"$location\";\$dtname = \"$dtname\";\$functionstorage = \"${prefix}storage\";\$telemetryfunctionname = \"${prefix}-telemetryfunction\";\$twinupdatefunctionname = \"${prefix}-twinupdatefunction\"; \$username = \"replaceme@contoso.com\""}"
   echo $result | jq -c > $AZ_SCRIPTS_OUTPUT_PATH

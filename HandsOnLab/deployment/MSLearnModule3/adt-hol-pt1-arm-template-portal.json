@@ -317,7 +317,7 @@
     //"azPowerShellVersion": "3.0",  // or "azCliVersion": "2.15.0",
     "azCliVersion": "2.15.0",
     //PS Version"arguments": "[format(' -dtname {0}, -rgname {1} -username {2} -identity {3}', variables('digitaltwins').name, resourceGroup().name, 'admin@teoinventrix.onmicrosoft.com', reference(variables('identityName')).principalId) ]",
-    "arguments": "[format('{0} {1}', variables('digitaltwins').name, resourceGroup().name)]",
+    "arguments": "[format('{0} {1} {2} {3}', variables('digitaltwins').name, resourceGroup().name, variables('prefix'), parameters('location'))]",
     //"arguments": "[concat(variables('apostrophe'), variables('digitaltwins').name,variables('apostrophe'), ',', variables('apostrophe'), resourceGroup().name,variables('apostrophe'), ',', variables('apostrophe'),'admin@teoinventrix.onmicrosoft.com',variables('apostrophe'), ',', variables('apostrophe'), reference(variables('identityName')).principalId, variables('apostrophe')) ]",
     //"arguments": "foo,bar",
     "environmentVariables": [
