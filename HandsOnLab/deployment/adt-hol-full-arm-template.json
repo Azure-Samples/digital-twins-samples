@@ -50,7 +50,11 @@
     },
     "functionapp": {
       "name": "[concat(variables('prefix'), 'DTFunctions')]",
-      "zipurl": "https://github.com/Teodelas/digital-twins-samples/blob/master/HandsOnLab/TwinInputFunction/twinfunction.zip?raw=true"
+      "zipurl": "https://github.com/Azure-Samples/digital-twins-samples/blob/master/HandsOnLab/TwinInputFunction/twinfunction.zip?raw=true"
+    },
+    "tsifunctionapp": {
+      "name": "[concat(variables('prefix'), 'TSIFunctions')]",
+      "zipurl": "https://github.com/Teodelas/digital-twins-samples/blob/master/HandsOnLab/TSIFunction/tsifunction.zip?raw=true"
     },
     "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
     "ADTroleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', 'bcd981a7-7f74-457b-83e1-cceb9e632ffe')]",
@@ -137,35 +141,35 @@
         "identity": {
             "type": "SystemAssigned"
     },
-            "properties": {
-                "name": "[variables('functionapp').name]",
-                "siteConfig": {
-                    "appSettings": [
-                        {
-                            "name": "FUNCTIONS_WORKER_RUNTIME",
-                            "value": "dotnet"
-                        },
-                        {
-                            "name": "FUNCTIONS_EXTENSION_VERSION",
-                            "value": "~3"
-                        },
-                        {
-                            "name": "AzureWebJobsStorage",
-                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storage').name, ';AccountKey=', listKeys(variables('storage').name,'2019-06-01').keys[0].value)]"
-                        },
-                        {
-                        "name": "ADT_SERVICE_URL",
-                        "value": "[concat('https://', variables('digitaltwins').name, '.api.wus2.digitaltwins.azure.net')]"
-                        },
-                        {
-                        "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
-                        "value": true
-                        }
-                    ]
-                },
-                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('serverfarm').name)]",
-                "clientAffinityEnabled": false
+        "properties": {
+            "name": "[variables('functionapp').name]",
+            "siteConfig": {
+                "appSettings": [
+                    {
+                        "name": "FUNCTIONS_WORKER_RUNTIME",
+                        "value": "dotnet"
+                    },
+                    {
+                        "name": "FUNCTIONS_EXTENSION_VERSION",
+                        "value": "~3"
+                    },
+                    {
+                        "name": "AzureWebJobsStorage",
+                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storage').name, ';AccountKey=', listKeys(variables('storage').name,'2019-06-01').keys[0].value)]"
+                    },
+                    {
+                    "name": "ADT_SERVICE_URL",
+                    "value": "[concat('https://', variables('digitaltwins').name, '.api.wus2.digitaltwins.azure.net')]"
+                    },
+                    {
+                    "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                    "value": true
+                    }
+                ]
             },
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('serverfarm').name)]",
+            "clientAffinityEnabled": false
+        },
         "resources": [{
         "name": "MSDeploy",
         "type": "extensions",
@@ -449,6 +453,67 @@
         }
       ]
     },
+     {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2019-08-01",
+            "name": "[variables('tsifunctionapp').name]",
+            "kind": "functionapp",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', variables('serverfarm').name)]",
+                "[concat('Microsoft.Storage/storageAccounts/', variables('storage').name)]"
+                        ],
+        "properties": {
+            "name": "[variables('tsifunctionapp').name]",
+            "siteConfig": {
+                "appSettings": [
+                    {
+                        "name": "FUNCTIONS_WORKER_RUNTIME",
+                        "value": "dotnet"
+                    },
+                    {
+                        "name": "FUNCTIONS_EXTENSION_VERSION",
+                        "value": "~3"
+                    },
+                    {
+                        "name": "AzureWebJobsStorage",
+                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storage').name, ';AccountKey=', listKeys(variables('storage').name,'2019-06-01').keys[0].value)]"
+                    },
+                    {
+                    "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                    "value": true
+                    },
+                    {
+                    "name": "EventHubAppSetting-TSI",
+                    "value": "[concat('Endpoint=sb://', variables('eventHub').namespaces, '.servicebus.windows.net/;SharedAccessKeyName=TsiAuthRule;SharedAccessKey=', listKeys(resourceId(subscription().subscriptionId,resourceGroup().name,'Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventHub').namespaces, 'tsieventhub', 'TsiAuthRule'), '2017-04-01').primaryKey, ';EntityPath=TsiEventHub')]"
+                  },
+                  {
+                    "name": "EventHubAppSetting-Twins",
+                    "value": "[concat('Endpoint=sb://', variables('eventHub').namespaces, '.servicebus.windows.net/;SharedAccessKeyName=TwinsAuthRule;SharedAccessKey=', listKeys(resourceId(subscription().subscriptionId,resourceGroup().name,'Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventHub').namespaces, 'twinseventhub', 'TwinsAuthRule'), '2017-04-01').primaryKey, ';EntityPath=TwinsEventHub')]"
+                  }
+                ]
+            },
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('serverfarm').name)]",
+            "clientAffinityEnabled": false
+        },
+        "resources": [{
+        "name": "MSDeploy",
+        "type": "extensions",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+          "[variables('tsifunctionapp').name]"
+        ],
+        "apiVersion": "2015-08-01",
+        "tags": {
+          "displayName": "[variables('DTFunctionWebDeploy')]"
+        },
+        "properties": {
+          "packageUri": "[variables('tsifunctionapp').zipurl]",
+            "dbType": "None",
+            "connectionString": ""
+        }
+      }]    
+        },
 {
   "type": "Microsoft.Resources/deploymentScripts",
   "apiVersion": "2020-10-01",
@@ -479,32 +544,7 @@
         "secureValue": "if this is really a secret, don't put it here... in plain text..."
       }
     ],
-    "scriptContent": "
-      dtname=$1
-      rgname=$2
-      git clone https://github.com/Teodelas/digital-twins-samples.git -q
-      az extension add --name azure-iot --upgrade
-      factorymodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryInterface.json --query [].id -o tsv)
-      floormodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryFloorInterface.json --query [].id -o tsv)
-      prodlinemodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/ProductionLineInterface.json --query [].id -o tsv)
-      prodstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/ProductionStepInterface.json --query [].id -o tsv)
-      gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/ProductionStepGrinding.json --query [].id -o tsv)
-
-            #Instantiate ADT Instances
-        az dt twin create -n $dtname --dtmi $factorymodelid --twin-id 'ChocolateFactory'
-        az dt twin create -n $dtname --dtmi $floormodelid --twin-id 'FactoryFloor'
-        az dt twin create -n $dtname --dtmi $prodlinemodelid --twin-id 'ProductionLine'
-        az dt twin create -n $dtname --dtmi $gridingstepmodelid --twin-id 'GrindingStep'
-
-        #Create relationship
-        relname='rel_has_floors'
-        az dt twin relationship create -n $dtname --relationship $relname --twin-id 'ChocolateFactory' --target 'FactoryFloor' --relationship-id 'Factory has floors'
-        relname='rel_runs_lines'
-        az dt twin relationship create -n $dtname --relationship $relname --twin-id 'FactoryFloor' --target 'ProductionLine' --relationship-id 'Floor run production lines'
-        relname='rel_runs_steps'
-        az dt twin relationship create -n $dtname --relationship $relname --twin-id 'ProductionLine' --target 'GrindingStep' --relationship-id 'Floor run production lines'
-
-    ", // or "primaryScriptUri": "https://raw.githubusercontent.com/Azure/azure-docs-json-samples/master/deployment-script/deploymentscript-helloworld.ps1",
+    "primaryScriptUri": "https://raw.githubusercontent.com/Teodelas/digital-twins-samples/master/HandsOnLab/deployment//arm-template-full-deployment-script.ps1",
     "supportingScriptUris":[],
     "timeout": "PT30M",
     "cleanupPreference": "OnSuccess",
