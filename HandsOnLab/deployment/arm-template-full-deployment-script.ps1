@@ -4,7 +4,7 @@ prefix=$3
 location=$4
 ehnamespace=$5
 twinseventhub=$6
-
+twinsehauth=$7
 git clone https://github.com/Teodelas/digital-twins-samples.git -q
 az extension add --name azure-iot --upgrade
 factorymodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryInterface.json --query [].id -o tsv)
@@ -27,7 +27,7 @@ gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscr
   relname='rel_runs_steps'
   az dt twin relationship create -n $dtname --relationship $relname --twin-id 'ProductionLine' --target 'GrindingStep' --relationship-id 'Floor run production lines'
   
-  az dt endpoint create eventhub --endpoint-name EHEndpoint --eventhub-resource-group $rgname --eventhub-namespace $ehnamespace --eventhub $twinseventhub --eventhub-policy EHPolicy -n $dtname
+  az dt endpoint create eventhub --endpoint-name EHEndpoint --eventhub-resource-group $rgname --eventhub-namespace $ehnamespace --eventhub $twinseventhub --eventhub-policy $twinsehauth -n $dtname
   az dt route create -n $dtname --endpoint-name EHEndpoint --route-name EHRoute --filter "type = 'Microsoft.DigitalTwins.Twin.Update'"
 
   result="{\"PS-Script\":"\"" start-copy-> \$random = '$prefix'; \$rgname = '$rgname';\$location = '$location';\$dtname = '$dtname';\$functionstorage = '${prefix}storage';\$telemetryfunctionname = '${prefix}-telemetryfunction';\$twinupdatefunctionname = '${prefix}-twinupdatefunction'; \$username = 'replaceme@contoso.com' <-endcopy "\""}"
