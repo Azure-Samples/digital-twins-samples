@@ -39,5 +39,5 @@ gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscr
   az iot hub device-identity create --device-id GrindingStep --hub-name $iothubname -g $rgname
   connectionstring=$(az iot hub device-identity connection-string show -d GrindingStep --hub-name $iothubname)
 
-  result="{\"device-connectin-string\":\" $connectionstring \"}"
+  result="{\"device-connectin-string\":"\"" '$connectionstring' "\""}"
   echo $result | jq -c > $AZ_SCRIPTS_OUTPUT_PATH
