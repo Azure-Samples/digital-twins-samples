@@ -164,7 +164,7 @@
                     },
                     {
                     "name": "ADT_SERVICE_URL",
-                    "value": "[concat('https://', variables('digitaltwins').name, '.api.',resourceGroup().location, '.digitaltwins.azure.net')]"
+                    "value": "[concat('https://', variables('digitaltwins').name, '.api.wus2.digitaltwins.azure.net')]"
                     },
                     {
                     "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
