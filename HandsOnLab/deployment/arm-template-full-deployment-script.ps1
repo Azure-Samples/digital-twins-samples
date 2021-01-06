@@ -7,6 +7,7 @@ twinseventhub=$6
 twinsehauth=$7
 iothubname=$8
 tsiname=$9
+id=$10
 git clone https://github.com/Teodelas/digital-twins-samples.git -q
 az extension add --name azure-iot --upgrade
 factorymodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryInterface.json --query [].id -o tsv)
