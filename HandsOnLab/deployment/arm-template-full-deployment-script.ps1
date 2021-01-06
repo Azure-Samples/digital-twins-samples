@@ -32,7 +32,7 @@ gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscr
   
   az dt endpoint create eventhub --endpoint-name EHEndpoint --eventhub-resource-group $rgname --eventhub-namespace $ehnamespace --eventhub $twinseventhub --eventhub-policy $twinsehauth -n $dtname
   az dt route create -n $dtname --endpoint-name EHEndpoint --route-name EHRoute --filter "type = 'Microsoft.DigitalTwins.Twin.Update'"
-  
+  sleep 30
   az extension add --name timeseriesinsights -y
   az timeseriesinsights access-policy create -g $rgname --environment-name $tsiname -n access1 --principal-object-id $id  --description "some description" --roles Contributor Reader
   az iot hub device-identity create --device-id GrindingStep --hub-name $iothubname -g $rgname
