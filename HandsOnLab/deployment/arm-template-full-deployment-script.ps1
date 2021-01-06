@@ -9,7 +9,6 @@ iothubname=$8
 tsiname=$9
 id=$10
 git clone https://github.com/Teodelas/digital-twins-samples.git -q
-az extension add --name azure-iot --upgrade
 factorymodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryInterface.json --query [].id -o tsv)
 floormodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/FactoryFloorInterface.json --query [].id -o tsv)
 prodlinemodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscriptinput/digital-twins-samples/HandsOnLab/models/ProductionLineInterface.json --query [].id -o tsv)
@@ -37,7 +36,7 @@ gridingstepmodelid=$(az dt model create -n $dtname --models /mnt/azscripts/azscr
   az extension add --name azure-iot -y
   az timeseriesinsights access-policy create -g $rgname --environment-name $tsiname -n access1 --principal-object-id $id  --description "some description" --roles Contributor Reader
   az iot hub device-identity create --device-id GrindingStep --hub-name $iothubname -g $rgname
-  connectionstring=$(az iot hub device-identity connection-string show -d GrindingStep --hub-name $iothubname)
+  connectionstring=$(az iot hub device-identity connection-string show -d GrindingStep --hub-name $iothubname -o tsv)
 
   result="{\"device-connectin-string\":"\"" '$connectionstring' "\""}"
   echo $result | jq -c > $AZ_SCRIPTS_OUTPUT_PATH
