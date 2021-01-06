@@ -209,7 +209,7 @@
       "apiVersion": "2020-04-01-preview",
       "name": "[variables('eventGrid').name]",
       "location": "[resourceGroup().location]",
-      "dependsOn": [ "[variables('iotHub').name]"],
+      "dependsOn": [ "[variables('iotHub').name]", ],
       "properties": {
         "source": "[resourceId('Microsoft.Devices/IotHubs', variables('iotHub').name)]",
         "topicType": "microsoft.devices.iothubs"
@@ -365,7 +365,7 @@
     {
       "type": "Microsoft.EventHub/namespaces/eventhubs/authorizationRules",
       "apiVersion": "2017-04-01",
-      "name": "[concat(variables('eventHub').namespaces, '/', variables('TSIEventHubName'), '/TsiAuthRule')]",
+      "name": "[concat(variables('eventHub').namespaces, '/', variables('TSIEventHubName'), '/', variables('TSIEHAuthRule'))]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
         "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHub').namespaces, variables('TSIEventHubName'))]",
@@ -381,7 +381,7 @@
     {
       "type": "Microsoft.EventHub/namespaces/eventhubs/authorizationRules",
       "apiVersion": "2017-04-01",
-      "name": "[concat(variables('eventHub').namespaces, '/', variables('TwinsEventHubName') , '/TwinsAuthRule')]",
+      "name": "[concat(variables('eventHub').namespaces, '/', variables('TwinsEventHubName') , '/', variables('TwinsEHAuthRule'))]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
         "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('eventHub').namespaces, variables('TwinsEventHubName'))]",
@@ -490,11 +490,11 @@
                     },
                     {
                     "name": "EventHubAppSetting-TSI",
-                    "value": "[concat('Endpoint=sb://', variables('eventHub').namespaces, '.servicebus.windows.net/;SharedAccessKeyName=TsiAuthRule;SharedAccessKey=', listKeys(resourceId(subscription().subscriptionId,resourceGroup().name,'Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventHub').namespaces, variables('TSIEventHubName'), variables('TSIEHAuthRule')), '2017-04-01').primaryKey, ';EntityPath=TsiEventHub')]"
+                    "value": "[concat('Endpoint=sb://', variables('eventHub').namespaces, '.servicebus.windows.net/;SharedAccessKeyName=', variables('TSIEHAuthRule'),';SharedAccessKey=', listKeys(resourceId(subscription().subscriptionId,resourceGroup().name,'Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventHub').namespaces, variables('TSIEventHubName'), variables('TSIEHAuthRule')), '2017-04-01').primaryKey, ';EntityPath=', variables('TSIEventHubName'))]"
                   },
                   {
                     "name": "EventHubAppSetting-Twins",
-                    "value": "[concat('Endpoint=sb://', variables('eventHub').namespaces, '.servicebus.windows.net/;SharedAccessKeyName=TwinsAuthRule;SharedAccessKey=', listKeys(resourceId(subscription().subscriptionId,resourceGroup().name,'Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventHub').namespaces, variables('TwinsEventHubName') , variables('TwinsEHAuthRule')), '2017-04-01').primaryKey, ';EntityPath=TwinsEventHub')]"
+                    "value": "[concat('Endpoint=sb://', variables('eventHub').namespaces, '.servicebus.windows.net/;SharedAccessKeyName=', variables('TwinsEHAuthRule'),';SharedAccessKey=', listKeys(resourceId(subscription().subscriptionId,resourceGroup().name,'Microsoft.EventHub/namespaces/eventhubs/authorizationRules', variables('eventHub').namespaces, variables('TwinsEventHubName') , variables('TwinsEHAuthRule')), '2017-04-01').primaryKey, ';EntityPath=', variables('TwinsEventHubName'))]"
                   }
                 ]
             },
@@ -540,7 +540,7 @@
     //"azPowerShellVersion": "3.0",  // or "azCliVersion": "2.15.0",
     "azCliVersion": "2.15.0",
     //PS Version"arguments": "[format(' -dtname {0}, -rgname {1} -username {2} -identity {3}', variables('digitaltwins').name, resourceGroup().name, 'admin@teoinventrix.onmicrosoft.com', reference(variables('identityName')).principalId) ]",
-   "arguments": "[format('{0} {1} {2} {3} {4} {5} {6}', variables('digitaltwins').name, resourceGroup().name, variables('prefix'), parameters('location'), variables('eventHub').namespaces,variables('TwinsEventHubName'), variables('TwinsEHAuthRule'))]",
+   "arguments": "[format('{0} {1} {2} {3} {4} {5} {6} {7} {8}', variables('digitaltwins').name, resourceGroup().name, variables('prefix'), parameters('location'), variables('eventHub').namespaces,variables('TwinsEventHubName'), variables('TwinsEHAuthRule'), variables('iotHub').name, variables('tsi').name )]",
     //"arguments": "[concat(variables('apostrophe'), variables('digitaltwins').name,variables('apostrophe'), ',', variables('apostrophe'), resourceGroup().name,variables('apostrophe'), ',', variables('apostrophe'),'admin@teoinventrix.onmicrosoft.com',variables('apostrophe'), ',', variables('apostrophe'), reference(variables('identityName')).principalId, variables('apostrophe')) ]",
     //"arguments": "foo,bar",
     "environmentVariables": [
