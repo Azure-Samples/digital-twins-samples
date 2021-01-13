@@ -261,7 +261,7 @@
         "principalType": "ServicePrincipal"
       }
     },
-        {
+    {
       "type": "Microsoft.Authorization/roleAssignments",
       "apiVersion": "2018-09-01-preview",
       "name": "[variables('ADTroleDefinitionName')]",
