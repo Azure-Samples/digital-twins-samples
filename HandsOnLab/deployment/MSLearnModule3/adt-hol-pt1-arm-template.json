@@ -54,7 +54,7 @@
     },
     "functionapp": {
       "name": "[concat(variables('prefix'), 'DTFunctions')]",
-      "zipurl": "https://github.com/Teodelas/digital-twins-samples/blob/master/HandsOnLab/TwinInputFunction/twinfunction.zip?raw=true"
+      "zipurl": "https://github.com/Azure-Samples/digital-twins-samples/blob/master/HandsOnLab/TwinInputFunction/twinfunction.zip?raw=true"
     },
     "roleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
     "ADTroleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', 'bcd981a7-7f74-457b-83e1-cceb9e632ffe')]",
@@ -317,7 +317,7 @@
     //"azPowerShellVersion": "3.0",  // or "azCliVersion": "2.15.0",
     "azCliVersion": "2.15.0",
     //PS Version"arguments": "[format(' -dtname {0}, -rgname {1} -username {2} -identity {3}', variables('digitaltwins').name, resourceGroup().name, 'admin@teoinventrix.onmicrosoft.com', reference(variables('identityName')).principalId) ]",
-    "arguments": "[format('{0} {1} {2} {3}', variables('digitaltwins').name, resourceGroup().name, variables('prefix'), parameters('location'))]",
+    "arguments": "[format('{0} {1} {2} {3} {4}', variables('digitaltwins').name, resourceGroup().name, variables('prefix'), parameters('location'), parameters('userid'))]",
     //"arguments": "[concat(variables('apostrophe'), variables('digitaltwins').name,variables('apostrophe'), ',', variables('apostrophe'), resourceGroup().name,variables('apostrophe'), ',', variables('apostrophe'),'admin@teoinventrix.onmicrosoft.com',variables('apostrophe'), ',', variables('apostrophe'), reference(variables('identityName')).principalId, variables('apostrophe')) ]",
     //"arguments": "foo,bar",
     "environmentVariables": [
@@ -326,7 +326,7 @@
         "secureValue": "if this is really a secret, don't put it here... in plain text..."
       }
     ],
-    "primaryScriptUri": "https://raw.githubusercontent.com/Teodelas/digital-twins-samples/master/HandsOnLab/deployment/MSLearnModule3/arm-template-pt1-deployment-script.ps1",
+    "primaryScriptUri": "https://raw.githubusercontent.com/Azure-Samples/digital-twins-samples/master/HandsOnLab/deployment/MSLearnModule3/arm-template-pt1-deployment-script.ps1",
     "supportingScriptUris":[],
     "timeout": "PT30M",
     "cleanupPreference": "OnSuccess",

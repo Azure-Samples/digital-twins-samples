@@ -440,7 +440,7 @@ az eventgrid event-subscription create --name IoTHubEvents --source-resource-id 
 
 ![Device Connection String](./images/update-device-key.png)
 
-1. In the PowerShell window, navigate to the SimulatedClient folder in the repo and run the simulated client
+1. In a **new** PowerShell window, navigate to the SimulatedClient folder in the repo and run the simulated client.  **Leave the client running**
 
     ```Azure CLI
     cd C:\Users\username\repos\digital-twins-samples\handsonlab\SimulatedClient
@@ -448,7 +448,7 @@ az eventgrid event-subscription create --name IoTHubEvents --source-resource-id 
     node ./Sensor.js
     ```
 
-1. The simulated device will begin sending data.
+1. The simulated device will begin sending data. Leave this running.
 
 At this point, you should see messages showing up in the Azure Function Log Stream that was configured previously.  The Azure Function Log Stream will show the telemetry being received from Event Grid and any errors connecting to Azure Digital Twins or updating the Twin.
 
@@ -667,3 +667,188 @@ Now, data should be flowing into your Time Series Insights instance, ready to be
 
 In the current scenario, the status of the production line is a property in the digital twin.  Think about how the status should be determined and updated using what you've learned.
 ![Production Line Status](./images/challange-prod-line-status.png)
+
+## Visualize Data using PowerBI
+
+PowerBI (PBI) is a powerful tool that can be used for self-service adhoc analytics and to create dashboards that can be shared. In this section, we'll configure a data path that PBI can use and we'll create a simple dashboard.
+
+### PowerBI Workspace
+
+1. Sign in to your [Power BI](https://powerbi.microsoft.com/en-us/) account
+1. On the left under `Workspaces` click on `Create a workspace`
+1. For `Workspace name` enter `initials-IoTLab` replace `initials` with your initials example: td-IoT Lab
+
+
+### Configure IoT Hub
+
+1. Create a consumer group so that PBI can have an access to idempotent version of the data. Also, retrieve the SAS key.
+
+    ```azurecli
+    az iot hub consumer-group create --hub-name $dtname --name ASA
+    ```
+
+### Create, configure, and run a Stream Analytics job
+
+1. Create an Azure Stream Analytics (ASA) job
+
+    ```azurecli
+    az stream-analytics job create --resource-group $rgname --name "PBIVisualization" --location $location
+    ```
+1. In the [Azure portal](https://portal.azure.com), Open the ASA job created
+
+1. Under **Job topology**, select **Inputs**.
+
+1. In the **Inputs** pane, select **Add stream input**, then select **IoT Hub** from the drop-down list. On the new input pane, enter the following information:
+
+   **Input alias**: Enter `IoTHub`
+
+   **Select IoT Hub from your subscription**: Select this radio button.
+
+   **Subscription**: Select the Azure subscription you're using for this lab
+
+   **IoT Hub**: Select the IoT Hub you're using for this lab
+
+   **Endpoint**: Select **Messaging**.
+
+   **Shared access policy name**: Select *iothubowner*
+
+   **Shared access policy key**: This field is auto-filled based on your selection for the shared access policy name.
+
+   **Consumer group**: Select the consumer group you created previously.
+
+   Leave all other fields at their defaults.
+
+1. Select **Save**.
+
+1. Under **Job topology**, select **Outputs**.
+
+1. In the **Outputs** pane, select **Add** and **Power BI**.
+
+1. On the **Power BI - New output** pane, select **Authorize** and follow the prompts to sign in to your Power BI account.
+
+1. After you've signed in to Power BI, enter the following information:
+
+   **Output alias**: Enter `PBI`.
+
+   **Group workspace**: Select the workspace created earlier
+
+   **Dataset name**: Enter IoTDataSet
+
+   **Table name**: Enter IoTData.
+
+   **Authentication mode**: Select `User token`
+
+1. Select **Save**
+
+1. Under **Job topology**, select **Query** and paste the query below
+
+    ```sql
+        WITH AnomalyDetectionStep AS
+        (
+            SELECT
+                EVENTENQUEUEDUTCTIME AS time,
+                FanSpeed,
+                Force,
+                ChasisTemperature,
+                PowerUsage,
+                RoastingTime,
+                CAST(Vibration AS float) AS vibe,
+                AnomalyDetection_SpikeAndDip(CAST(Vibration AS float), 95, 120, 'spikesanddips')
+                    OVER(LIMIT DURATION(second, 120)) AS SpikeAndDipScores
+            FROM IoTHub
+        )
+        SELECT
+            time,
+            Vibe,
+            FanSpeed,
+            Force,
+            ChasisTemperature,
+            PowerUsage,
+            RoastingTime,
+            CAST(GetRecordPropertyValue(SpikeAndDipScores, 'Score') AS float) AS
+            SpikeAndDipScore,
+            CAST(GetRecordPropertyValue(SpikeAndDipScores, 'IsAnomaly') AS bigint) AS
+            IsSpikeAndDipAnomaly
+        INTO PBI
+        FROM AnomalyDetectionStep
+    ```
+1. Click on **Test query** to see the data.  If there's no data, ensure the simulated client is running
+1. Select **Save query**.
+
+### Run the Stream Analytics job
+
+In the Stream Analytics job, select **Overview**, then select **Start** > **Now** > **Start**. Once the job successfully starts, the job status changes from **Stopped** to **Running**.
+
+### Create a Power BI report to visualize the data
+
+1. Ensure the simulated client is running
+
+1. Sign in to your [Power BI](https://powerbi.microsoft.com/en-us/) account.
+
+1. On the left, select the workspace **xx-IoTLab** (xx are your initials)
+
+   You should see the dataset that you specified when you created the output for the Stream Analytics job.
+
+1. Next to **IoTDataSet** click on the ellipsis and select **Create Report**
+
+1. Create a line chart to show real-time temperature over time:
+
+   1. On the **Visualizations** pane of the report creation page, select the line chart icon to add a line chart.
+
+   1. On the **Fields** pane, under the **IoTData** table:
+
+       1. Drag **time** to **Axis** on the **Visualizations** pane.
+
+       1. Drag **Chasistemperature** to **Values**.
+
+      A line chart is created. The x-axis displays date and time in the UTC time zone. The y-axis displays ChasisTemperature from the sensor.
+
+1. Create another line chart to show real-time humidity over time. To do this, click on a blank part of the canvas and follow the same steps above to place **EventEnqueuedUtcTime** on the x-axis and **humidity** on the y-axis.
+1. On the top right, click on Save and provide a name for the report
+
+### Create a Power BI Dashboard
+
+#### Add a guage
+
+1. On the left, click on **xx-IoTLab**
+1. At the top, click on **New** -> **Dashboard**
+1. At the top, click on **Edit** -> **Add a tile**.  In the Window that opens
+    1. Choose **Custom Streaming Data** and click next
+    2. Choose **IoTDataSet** and click next
+    1. For **Visualization Type** choose **Guage**
+        1. For **Value** choose **Vibe**
+    1. click Next and Apply
+
+#### Add a SpikeAndDipScore Clustered Bar Chart Tile
+
+1. At the top, click on **Edit** -> **Add a tile**.  In the Window that opens
+    1. Choose **Custom Streaming Data** and click next
+    1. Choose **IoTDataSet** and click next
+    1. For **Visualization Type** choose **Clustered bar chart**
+        1. For **Value** choose **SpikeAndDipScore**
+    1. click Next and Apply
+
+#### Add the IsSpikeAndDipAnomaly Card Tile
+
+1. At the top, click on **Edit** -> **Add a tile**.  In the Window that opens
+    1. Choose **Custom Streaming Data** and click next
+    1. Choose **IoTDataSet** and click next
+    1. For **Visualization Type** choose **Card**
+        1. For **Value** choose **IsSpikeAndDipAnomaly**
+    1. click Next and Apply
+
+#### Add Anomalies Over The Hour Line Chart Tile
+
+Now to create a fourth tile, the `Anomalies Over the Hour` line chart.  This one is a bit more complex.
+
+1. At the top, click on **Edit** -> **Add a tile**.  In the Window that opens
+    1. Choose **Custom Streaming Data** and click next
+    1. Choose **IoTDataSet** and click next
+    1. Under **Visualization Type**, open the dropdown, and then click **Line chart**.
+    1. Under **Axis**, click **+ Add value**, and then select **time** from the dropdown.
+    1. Under **Values**, click **+ Add value**, and then select **IsSpikeAndDipAnomaly** from the dropdown.
+    1. Under **Time window to display**, choose **60** and leave the units set to **Minutes**.
+
+1. To display the Tile details pane, click **Next**
+
+This is the end of the Hands On Lab!
