@@ -549,7 +549,7 @@
         "secureValue": "if this is really a secret, don't put it here... in plain text..."
       }
     ],
-    "primaryScriptUri": "https://raw.githubusercontent.com/Teodelas/digital-twins-samples/master/HandsOnLab/deployment/arm-template-full-deployment-script.ps1",
+    "primaryScriptUri": "https://raw.githubusercontent.com/Azure-Samples/digital-twins-samples/master/HandsOnLab/deployment/arm-template-full-deployment-script.ps1",
     "supportingScriptUris":[],
     "timeout": "PT30M",
     "cleanupPreference": "OnSuccess",
