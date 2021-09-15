@@ -14,6 +14,13 @@ description: Script for deploying Azure Digital Twins and associated resources u
 
 You can use the script directly to deploy resources, or reference it as a starting point for writing your own scripted interactions.
 
+### Table of contents
+* [Prerequisites](#prerequisites)
+* [Running the sample](#running-the-sample)
+* [Re-running the sample](#re-running-the-sample)
+* [Known issues](#known-issues)
+* [Next steps](#next-steps)
+
 ## Prerequisites
 
 You'll need an Azure subscription. You can set one up for free [here](https://azure.microsoft.com/free/?WT.mc_id=A261C142F).
