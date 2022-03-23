@@ -55,8 +55,8 @@ namespace SampleClientApp
                 }
                 Response<DigitalTwinsModelData[]> res = await client.CreateModelsAsync(dtdlList);
                 Log.Ok($"Model(s) created successfully!");
-                foreach (DigitalTwinsModelData md in res.Value)
-                    LogResponse(md.DtdlModel);
+              //  foreach (DigitalTwinsModelData md in res.Value)
+                //    LogResponse(md.DtdlModel);
             }
             catch (RequestFailedException e)
             {
