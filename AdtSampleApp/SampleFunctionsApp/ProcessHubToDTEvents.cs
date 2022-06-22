@@ -2,7 +2,7 @@ using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
 using Azure.Identity;
-using Azure.Messaging.EventGrid;
+using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
