@@ -2,14 +2,14 @@ using Azure;
 using Azure.Core.Pipeline;
 using Azure.DigitalTwins.Core;
 using Azure.Identity;
-using Microsoft.Azure.EventGrid.Models;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
+using Microsoft.Azure.Functions.Worker;
+using Azure.Messaging.EventGrid;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace SampleFunctionsApp
 {
@@ -20,8 +20,8 @@ namespace SampleFunctionsApp
         private static readonly HttpClient httpClient = new HttpClient();
         private static string adtServiceUrl = Environment.GetEnvironmentVariable("ADT_SERVICE_URL");
 
-        [FunctionName("ProcessHubToDTEvents")]
-        public async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
+        [Function("ProcessHubToDTEvents")]
+        public async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
         {
             // After this is deployed, you need to turn the Managed Identity Status to "On",
             // Grab Object Id of the function and assigned "Azure Digital Twins Owner (Preview)" role
