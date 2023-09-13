@@ -1,6 +1,7 @@
 ﻿using Azure;
 using Azure.DigitalTwins.Core;
-using Microsoft.Azure.DigitalTwins.Parser;
+using DTDLParser;
+using DTDLParser.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -226,7 +227,7 @@ namespace SampleClientApp
                 ModelParser parser = new ModelParser();
                 try
                 {
-                    IReadOnlyDictionary<Dtmi, DTEntityInfo> om = await parser.ParseAsync(reslist);
+                    IReadOnlyDictionary<Dtmi, DTEntityInfo> om = await parser.ParseAsync((IAsyncEnumerable<string>)reslist);
                     Log.Ok("Models parsed successfully. Deleting models...");
 
                     var interfaces = new List<DTInterfaceInfo>();
@@ -994,7 +995,7 @@ namespace SampleClientApp
                 var parser = new ModelParser();
                 try
                 {
-                    IReadOnlyDictionary<Dtmi, DTEntityInfo> om = await parser.ParseAsync(modelList);
+                    IReadOnlyDictionary<Dtmi, DTEntityInfo> om = await parser.ParseAsync((IAsyncEnumerable<string>)modelList);
                     Log.Out("");
                     Log.Ok($"**********************************************");
                     Log.Ok($"** Validated all files - Your DTDL is valid **");
