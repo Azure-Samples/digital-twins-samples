@@ -314,6 +314,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace My.Function
 {
@@ -325,7 +326,7 @@ namespace My.Function
         private static readonly HttpClient httpClient = new HttpClient();
 
         [FunctionName("TwinsFunction")]
-        public async void Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
+        public async Task Run([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
         {
             log.LogInformation(eventGridEvent.Data.ToString());
             if (adtInstanceUrl == null) log.LogError("Application setting \"ADT_SERVICE_URL\" not set");
