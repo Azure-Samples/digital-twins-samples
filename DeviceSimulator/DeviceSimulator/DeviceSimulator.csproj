@@ -16,6 +16,6 @@
     <PackageReference Include="Azure.Messaging.EventHubs" Version="5.11.5" />
     <PackageReference Include="Microsoft.Azure.Devices" Version="1.39.1" />
     <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.42.3" />
-    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
   </ItemGroup>
 </Project>
